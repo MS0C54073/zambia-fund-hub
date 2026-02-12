@@ -14,16 +14,297 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      businesses: {
+        Row: {
+          created_at: string
+          description: string | null
+          financial_projections: Json | null
+          id: string
+          industry: string | null
+          is_approved: boolean
+          is_verified: boolean
+          name: string
+          owner_id: string
+          pitch_deck_url: string | null
+          province: string | null
+          registration_doc_url: string | null
+          registration_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          financial_projections?: Json | null
+          id?: string
+          industry?: string | null
+          is_approved?: boolean
+          is_verified?: boolean
+          name: string
+          owner_id: string
+          pitch_deck_url?: string | null
+          province?: string | null
+          registration_doc_url?: string | null
+          registration_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          financial_projections?: Json | null
+          id?: string
+          industry?: string | null
+          is_approved?: boolean
+          is_verified?: boolean
+          name?: string
+          owner_id?: string
+          pitch_deck_url?: string | null
+          province?: string | null
+          registration_doc_url?: string | null
+          registration_number?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      campaigns: {
+        Row: {
+          business_id: string
+          created_at: string
+          currency: string
+          end_date: string | null
+          funding_type: Database["public"]["Enums"]["funding_type"]
+          goal_amount: number
+          id: string
+          loan_interest_rate: number | null
+          loan_term_months: number | null
+          raised_amount: number
+          revenue_share_percentage: number | null
+          reward_tiers: Json | null
+          start_date: string | null
+          status: Database["public"]["Enums"]["campaign_status"]
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          currency?: string
+          end_date?: string | null
+          funding_type: Database["public"]["Enums"]["funding_type"]
+          goal_amount: number
+          id?: string
+          loan_interest_rate?: number | null
+          loan_term_months?: number | null
+          raised_amount?: number
+          revenue_share_percentage?: number | null
+          reward_tiers?: Json | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          currency?: string
+          end_date?: string | null
+          funding_type?: Database["public"]["Enums"]["funding_type"]
+          goal_amount?: number
+          id?: string
+          loan_interest_rate?: number | null
+          loan_term_months?: number | null
+          raised_amount?: number
+          revenue_share_percentage?: number | null
+          reward_tiers?: Json | null
+          start_date?: string | null
+          status?: Database["public"]["Enums"]["campaign_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investments: {
+        Row: {
+          amount: number
+          campaign_id: string
+          created_at: string
+          currency: string
+          id: string
+          investor_id: string
+          payment_method: string | null
+          payment_reference: string | null
+          status: Database["public"]["Enums"]["investment_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          campaign_id: string
+          created_at?: string
+          currency?: string
+          id?: string
+          investor_id: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          status?: Database["public"]["Enums"]["investment_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          campaign_id?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          investor_id?: string
+          payment_method?: string | null
+          payment_reference?: string | null
+          status?: Database["public"]["Enums"]["investment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investments_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          is_verified: boolean
+          phone: string | null
+          province: string | null
+          updated_at: string
+          user_id: string
+          user_type: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          is_verified?: boolean
+          phone?: string | null
+          province?: string | null
+          updated_at?: string
+          user_id: string
+          user_type?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          is_verified?: boolean
+          phone?: string | null
+          province?: string | null
+          updated_at?: string
+          user_id?: string
+          user_type?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          investment_id: string | null
+          metadata: Json | null
+          payment_provider: string | null
+          payment_reference: string | null
+          status: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          investment_id?: string | null
+          metadata?: Json | null
+          payment_provider?: string | null
+          payment_reference?: string | null
+          status?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          investment_id?: string | null
+          metadata?: Json | null
+          payment_provider?: string | null
+          payment_reference?: string | null
+          status?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_investment_id_fkey"
+            columns: ["investment_id"]
+            isOneToOne: false
+            referencedRelation: "investments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
+      campaign_status:
+        | "draft"
+        | "pending_review"
+        | "active"
+        | "funded"
+        | "closed"
+        | "rejected"
+      funding_type: "equity" | "revenue_share" | "crowdfunding" | "loan"
+      investment_status: "pledged" | "paid" | "confirmed" | "refunded"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +431,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+      campaign_status: [
+        "draft",
+        "pending_review",
+        "active",
+        "funded",
+        "closed",
+        "rejected",
+      ],
+      funding_type: ["equity", "revenue_share", "crowdfunding", "loan"],
+      investment_status: ["pledged", "paid", "confirmed", "refunded"],
+    },
   },
 } as const
