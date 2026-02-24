@@ -17,6 +17,8 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [forgotMode, setForgotMode] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,6 +56,22 @@ const Auth = () => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setResetLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Check your email", description: "We've sent you a password reset link." });
+      setForgotMode(false);
+    }
+    setResetLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <motion.div
@@ -73,67 +91,105 @@ const Auth = () => {
             <span className="font-display font-bold text-lg text-foreground">ZamFund</span>
           </div>
 
-          <h1 className="text-2xl font-display font-bold mb-2 text-foreground">
-            {isSignUp ? "Create your account" : "Welcome back"}
-          </h1>
-          <p className="text-sm text-muted-foreground mb-6">
-            {isSignUp ? "Start investing or raising capital today." : "Sign in to your ZamFund account."}
-          </p>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {isSignUp && (
-              <div>
-                <Label htmlFor="name" className="text-foreground">Full Name</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="John Mwansa"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                  className="mt-1 bg-secondary border-border"
-                />
-              </div>
-            )}
-            <div>
-              <Label htmlFor="email" className="text-foreground">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="mt-1 bg-secondary border-border"
-              />
-            </div>
-            <div>
-              <Label htmlFor="password" className="text-foreground">Password</Label>
-              <div className="relative mt-1">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="bg-secondary border-border pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+          {forgotMode ? (
+            <>
+              <h1 className="text-2xl font-display font-bold mb-2 text-foreground">Reset password</h1>
+              <p className="text-sm text-muted-foreground mb-6">Enter your email and we'll send you a reset link.</p>
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div>
+                  <Label htmlFor="email" className="text-foreground">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="mt-1 bg-secondary border-border"
+                  />
+                </div>
+                <Button type="submit" variant="hero" className="w-full" disabled={resetLoading}>
+                  {resetLoading ? "Sending..." : "Send Reset Link"}
+                </Button>
+              </form>
+              <div className="mt-4 text-center">
+                <button onClick={() => setForgotMode(false)} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Back to sign in
                 </button>
               </div>
-            </div>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl font-display font-bold mb-2 text-foreground">
+                {isSignUp ? "Create your account" : "Welcome back"}
+              </h1>
+              <p className="text-sm text-muted-foreground mb-6">
+                {isSignUp ? "Start investing or raising capital today." : "Sign in to your ZamFund account."}
+              </p>
 
-            <Button type="submit" variant="hero" className="w-full" disabled={loading}>
-              {loading ? "Please wait..." : isSignUp ? "Create Account" : "Sign In"}
-            </Button>
-          </form>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {isSignUp && (
+                  <div>
+                    <Label htmlFor="name" className="text-foreground">Full Name</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="John Mwansa"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required
+                      className="mt-1 bg-secondary border-border"
+                    />
+                  </div>
+                )}
+                <div>
+                  <Label htmlFor="email" className="text-foreground">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="mt-1 bg-secondary border-border"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password" className="text-foreground">Password</Label>
+                    {!isSignUp && (
+                      <button type="button" onClick={() => setForgotMode(true)} className="text-xs text-primary hover:text-primary/80 transition-colors">
+                        Forgot password?
+                      </button>
+                    )}
+                  </div>
+                  <div className="relative mt-1">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="bg-secondary border-border pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <Button type="submit" variant="hero" className="w-full" disabled={loading}>
+                  {loading ? "Please wait..." : isSignUp ? "Create Account" : "Sign In"}
+                </Button>
+              </form>
+            </>
+          )}
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
@@ -165,14 +221,16 @@ const Auth = () => {
             Continue with Google
           </Button>
 
-          <div className="mt-6 text-center">
-            <button
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              {isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
-            </button>
-          </div>
+          {!forgotMode && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => setIsSignUp(!isSignUp)}
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                {isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up"}
+              </button>
+            </div>
+          )}
         </div>
       </motion.div>
     </div>
