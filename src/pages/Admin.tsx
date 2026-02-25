@@ -1,38 +1,37 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
-import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import {
-  Shield, Briefcase, TrendingUp, Users, CheckCircle, XCircle,
-} from "lucide-react";
-import type { Tables } from "@/integrations/supabase/types";
+import { Shield, Briefcase, TrendingUp, Users, CreditCard } from "lucide-react";
+import type { Tables, Database } from "@/integrations/supabase/types";
+import AdminUsersTab from "@/components/admin/AdminUsersTab";
+import AdminBusinessesTab from "@/components/admin/AdminBusinessesTab";
+import AdminCampaignsTab from "@/components/admin/AdminCampaignsTab";
+import AdminInvestmentsTab from "@/components/admin/AdminInvestmentsTab";
+import AdminTransactionsTab from "@/components/admin/AdminTransactionsTab";
 
-type Business = Tables<"businesses">;
-type Campaign = Tables<"campaigns">;
-type Investment = Tables<"investments">;
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 const adminNav = [
-  { icon: Shield, label: "Admin Overview", path: "/admin" },
-  { icon: Briefcase, label: "Businesses", path: "/admin" },
-  { icon: TrendingUp, label: "Campaigns", path: "/admin" },
-  { icon: Users, label: "Users", path: "/admin" },
+  { icon: Shield, label: "Admin Dashboard", path: "/admin" },
 ];
 
 const Admin = () => {
   const { user, loading, signOut } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [checking, setChecking] = useState(true);
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [campaigns, setCampaigns] = useState<(Campaign & { business_name?: string })[]>([]);
-  const [investments, setInvestments] = useState<Investment[]>([]);
-  const [tab, setTab] = useState("businesses");
+  const [tab, setTab] = useState("overview");
+
+  // Data
+  const [businesses, setBusinesses] = useState<Tables<"businesses">[]>([]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [investments, setInvestments] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<Tables<"transactions">[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -54,46 +53,49 @@ const Admin = () => {
   }, [isAdmin]);
 
   const fetchAll = async () => {
-    const [bizRes, campRes, invRes] = await Promise.all([
+    const [bizRes, campRes, invRes, txRes, profilesRes, rolesRes] = await Promise.all([
       supabase.from("businesses").select("*").order("created_at", { ascending: false }),
       supabase.from("campaigns").select("*, businesses(name)").order("created_at", { ascending: false }),
-      supabase.from("investments").select("*").order("created_at", { ascending: false }),
+      supabase.from("investments").select("*, campaigns(*, businesses(name))").order("created_at", { ascending: false }),
+      supabase.from("transactions").select("*").order("created_at", { ascending: false }),
+      supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+      supabase.from("user_roles").select("*"),
     ]);
+
     setBusinesses(bizRes.data ?? []);
     setCampaigns(
-      (campRes.data ?? []).map((c: any) => ({ ...c, business_name: c.businesses?.name }))
+      (campRes.data ?? []).map((c: any) => ({
+        ...c,
+        business_name: c.businesses?.name,
+      }))
     );
-    setInvestments(invRes.data ?? []);
-  };
+    
+    // Build profiles lookup for investor names
+    const profilesList = profilesRes.data ?? [];
+    const profilesLookup = new Map(profilesList.map((p: any) => [p.user_id, p.full_name]));
+    
+    setInvestments(
+      (invRes.data ?? []).map((inv: any) => ({
+        ...inv,
+        investor_name: profilesLookup.get(inv.investor_id) || null,
+        business_name: inv.campaigns?.businesses?.name,
+      }))
+    );
+    setTransactions(txRes.data ?? []);
 
-  const approveBusiness = async (id: string) => {
-    await supabase.from("businesses").update({ is_approved: true, is_verified: true }).eq("id", id);
-    toast({ title: "Business approved" });
-    fetchAll();
-  };
-
-  const rejectBusiness = async (id: string) => {
-    await supabase.from("businesses").update({ is_approved: false }).eq("id", id);
-    toast({ title: "Business rejected" });
-    fetchAll();
-  };
-
-  const approveCampaign = async (id: string) => {
-    await supabase.from("campaigns").update({ status: "active", start_date: new Date().toISOString() }).eq("id", id);
-    toast({ title: "Campaign approved and now active" });
-    fetchAll();
-  };
-
-  const rejectCampaign = async (id: string) => {
-    await supabase.from("campaigns").update({ status: "rejected" }).eq("id", id);
-    toast({ title: "Campaign rejected" });
-    fetchAll();
-  };
-
-  const confirmInvestment = async (id: string) => {
-    await supabase.from("investments").update({ status: "confirmed" }).eq("id", id);
-    toast({ title: "Investment confirmed" });
-    fetchAll();
+    // Merge profiles with roles
+    const rolesMap = new Map<string, AppRole[]>();
+    for (const r of rolesRes.data ?? []) {
+      const arr = rolesMap.get(r.user_id) ?? [];
+      arr.push(r.role);
+      rolesMap.set(r.user_id, arr);
+    }
+    setUsers(
+      (profilesRes.data ?? []).map((p: any) => ({
+        ...p,
+        roles: rolesMap.get(p.user_id) ?? [],
+      }))
+    );
   };
 
   if (loading || checking) {
@@ -107,8 +109,8 @@ const Admin = () => {
   if (!isAdmin) return null;
 
   const pendingBiz = businesses.filter((b) => !b.is_approved);
-  const pendingCampaigns = campaigns.filter((c) => c.status === "pending_review");
-  
+  const pendingCampaigns = campaigns.filter((c: any) => c.status === "pending_review");
+  const totalInvested = investments.reduce((s: number, i: any) => s + Number(i.amount), 0);
 
   return (
     <DashboardLayout navItems={adminNav} onSignOut={signOut}>
@@ -117,115 +119,56 @@ const Admin = () => {
           <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
             <Shield size={24} className="text-primary" /> Admin Dashboard
           </h1>
-          <p className="text-muted-foreground text-sm">Manage businesses, campaigns, and investments.</p>
-        </div>
-
-        {/* Stats */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-card rounded-xl border border-border/50 p-5">
-            <p className="text-xs text-muted-foreground mb-1">Pending Businesses</p>
-            <p className="text-2xl font-display font-bold text-yellow-400">{pendingBiz.length}</p>
-          </div>
-          <div className="bg-card rounded-xl border border-border/50 p-5">
-            <p className="text-xs text-muted-foreground mb-1">Pending Campaigns</p>
-            <p className="text-2xl font-display font-bold text-yellow-400">{pendingCampaigns.length}</p>
-          </div>
-          <div className="bg-card rounded-xl border border-border/50 p-5">
-            <p className="text-xs text-muted-foreground mb-1">Total Businesses</p>
-            <p className="text-2xl font-display font-bold text-foreground">{businesses.length}</p>
-          </div>
-          <div className="bg-card rounded-xl border border-border/50 p-5">
-            <p className="text-xs text-muted-foreground mb-1">Total Investments</p>
-            <p className="text-2xl font-display font-bold text-foreground">{investments.length}</p>
-          </div>
+          <p className="text-muted-foreground text-sm">Manage users, businesses, campaigns, investments, and transactions.</p>
         </div>
 
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="mb-6">
+          <TabsList className="mb-6 flex-wrap">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="businesses">Businesses</TabsTrigger>
             <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
             <TabsTrigger value="investments">Investments</TabsTrigger>
+            <TabsTrigger value="transactions">Transactions</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="businesses">
-            <div className="space-y-3">
-              {businesses.map((biz) => (
-                <div key={biz.id} className="bg-card rounded-xl border border-border/50 p-5 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-display font-semibold text-foreground">{biz.name}</h3>
-                    <p className="text-xs text-muted-foreground">{biz.industry} • {biz.province} • Reg: {biz.registration_number || "N/A"}</p>
+          <TabsContent value="overview">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { label: "Total Users", value: users.length, icon: Users, color: "text-primary" },
+                { label: "Pending Businesses", value: pendingBiz.length, icon: Briefcase, color: "text-yellow-400" },
+                { label: "Pending Campaigns", value: pendingCampaigns.length, icon: TrendingUp, color: "text-yellow-400" },
+                { label: "Total Invested", value: `K${totalInvested.toLocaleString()}`, icon: CreditCard, color: "text-green-400" },
+              ].map((stat) => (
+                <div key={stat.label} className="bg-card rounded-xl border border-border/50 p-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs text-muted-foreground">{stat.label}</p>
+                    <stat.icon size={16} className={stat.color} />
                   </div>
-                  <div className="flex items-center gap-2">
-                    {biz.is_approved ? (
-                      <span className="text-xs text-green-400 flex items-center gap-1"><CheckCircle size={14} /> Approved</span>
-                    ) : (
-                      <>
-                        <Button size="sm" variant="outline" className="text-green-400 border-green-400/30 hover:bg-green-400/10" onClick={() => approveBusiness(biz.id)}>
-                          <CheckCircle size={14} className="mr-1" /> Approve
-                        </Button>
-                        <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => rejectBusiness(biz.id)}>
-                          <XCircle size={14} className="mr-1" /> Reject
-                        </Button>
-                      </>
-                    )}
-                  </div>
+                  <p className="text-2xl font-display font-bold text-foreground">{stat.value}</p>
                 </div>
               ))}
-              {businesses.length === 0 && <p className="text-muted-foreground text-center py-8">No businesses registered yet.</p>}
             </div>
+          </TabsContent>
+
+          <TabsContent value="users">
+            <AdminUsersTab users={users} onRefresh={fetchAll} />
+          </TabsContent>
+
+          <TabsContent value="businesses">
+            <AdminBusinessesTab businesses={businesses} onRefresh={fetchAll} />
           </TabsContent>
 
           <TabsContent value="campaigns">
-            <div className="space-y-3">
-              {campaigns.map((camp) => (
-                <div key={camp.id} className="bg-card rounded-xl border border-border/50 p-5 flex items-center justify-between">
-                  <div>
-                    <h3 className="font-display font-semibold text-foreground">{camp.business_name}</h3>
-                    <p className="text-xs text-muted-foreground capitalize">
-                      {camp.funding_type.replace("_", " ")} • K{Number(camp.goal_amount).toLocaleString()} goal • {camp.status.replace("_", " ")}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {camp.status === "pending_review" && (
-                      <>
-                        <Button size="sm" variant="outline" className="text-green-400 border-green-400/30 hover:bg-green-400/10" onClick={() => approveCampaign(camp.id)}>
-                          <CheckCircle size={14} className="mr-1" /> Approve
-                        </Button>
-                        <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => rejectCampaign(camp.id)}>
-                          <XCircle size={14} className="mr-1" /> Reject
-                        </Button>
-                      </>
-                    )}
-                    {camp.status === "active" && <span className="text-xs text-green-400">Active</span>}
-                    {camp.status === "draft" && <span className="text-xs text-muted-foreground">Draft</span>}
-                    {camp.status === "rejected" && <span className="text-xs text-destructive">Rejected</span>}
-                  </div>
-                </div>
-              ))}
-              {campaigns.length === 0 && <p className="text-muted-foreground text-center py-8">No campaigns yet.</p>}
-            </div>
+            <AdminCampaignsTab campaigns={campaigns} onRefresh={fetchAll} />
           </TabsContent>
 
           <TabsContent value="investments">
-            <div className="space-y-3">
-              {investments.map((inv) => (
-                <div key={inv.id} className="bg-card rounded-xl border border-border/50 p-5 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-foreground">K{Number(inv.amount).toLocaleString()} {inv.currency}</p>
-                    <p className="text-xs text-muted-foreground capitalize">{inv.status} • {inv.payment_method || "N/A"}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {(inv.status === "pledged" || inv.status === "paid") && (
-                      <Button size="sm" variant="outline" className="text-green-400 border-green-400/30 hover:bg-green-400/10" onClick={() => confirmInvestment(inv.id)}>
-                        <CheckCircle size={14} className="mr-1" /> Confirm
-                      </Button>
-                    )}
-                    {inv.status === "confirmed" && <span className="text-xs text-green-400">Confirmed</span>}
-                  </div>
-                </div>
-              ))}
-              {investments.length === 0 && <p className="text-muted-foreground text-center py-8">No investments yet.</p>}
-            </div>
+            <AdminInvestmentsTab investments={investments} onRefresh={fetchAll} />
+          </TabsContent>
+
+          <TabsContent value="transactions">
+            <AdminTransactionsTab transactions={transactions} />
           </TabsContent>
         </Tabs>
       </motion.div>

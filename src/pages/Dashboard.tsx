@@ -50,6 +50,13 @@ const Dashboard = () => {
   const [campType, setCampType] = useState<"equity" | "revenue_share" | "crowdfunding" | "loan">("equity");
   const [campGoal, setCampGoal] = useState("");
   const [campSubmitting, setCampSubmitting] = useState(false);
+  const [campProblem, setCampProblem] = useState("");
+  const [campSolution, setCampSolution] = useState("");
+  const [campMarket, setCampMarket] = useState("");
+  const [campRevenue, setCampRevenue] = useState("");
+  const [campTraction, setCampTraction] = useState("");
+  const [campUseOfFunds, setCampUseOfFunds] = useState("");
+  const [campProposalFile, setCampProposalFile] = useState<File | null>(null);
 
   // Profile edit
   const [editingProfile, setEditingProfile] = useState(false);
@@ -146,11 +153,30 @@ const Dashboard = () => {
     if (!campBizId || !campGoal) return;
     setCampSubmitting(true);
 
+    let proposalDocUrl: string | null = null;
+    if (campProposalFile && user) {
+      const filePath = `${user.id}/${Date.now()}_proposal_${campProposalFile.name}`;
+      const { error: uploadErr } = await supabase.storage.from("business-documents").upload(filePath, campProposalFile);
+      if (uploadErr) {
+        toast({ title: "Upload failed", description: uploadErr.message, variant: "destructive" });
+        setCampSubmitting(false);
+        return;
+      }
+      proposalDocUrl = filePath;
+    }
+
     const { error } = await supabase.from("campaigns").insert({
       business_id: campBizId,
       funding_type: campType,
       goal_amount: parseFloat(campGoal),
       status: "draft",
+      proposal_problem: campProblem || null,
+      proposal_solution: campSolution || null,
+      proposal_market_size: campMarket || null,
+      proposal_revenue_model: campRevenue || null,
+      proposal_traction: campTraction || null,
+      proposal_use_of_funds: campUseOfFunds || null,
+      proposal_doc_url: proposalDocUrl,
     });
 
     if (error) {
@@ -158,7 +184,8 @@ const Dashboard = () => {
     } else {
       toast({ title: "Campaign created", description: "Submit for review when ready." });
       setShowCampaignForm(false);
-      setCampGoal("");
+      setCampGoal(""); setCampProblem(""); setCampSolution(""); setCampMarket("");
+      setCampRevenue(""); setCampTraction(""); setCampUseOfFunds(""); setCampProposalFile(null);
       fetchData();
     }
     setCampSubmitting(false);
@@ -394,25 +421,72 @@ const Dashboard = () => {
 
             {/* Campaign creation modal */}
             {showCampaignForm && (
-              <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <form onSubmit={handleCreateCampaign} className="bg-card rounded-2xl border border-border/50 p-8 max-w-md w-full space-y-4">
+              <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-auto">
+                <form onSubmit={handleCreateCampaign} className="bg-card rounded-2xl border border-border/50 p-8 max-w-lg w-full space-y-4 my-8">
                   <h3 className="text-lg font-display font-semibold text-foreground">Create Campaign</h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-foreground">Funding Type</Label>
+                      <select
+                        value={campType}
+                        onChange={(e) => setCampType(e.target.value as any)}
+                        className="w-full mt-1 rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground"
+                      >
+                        <option value="equity">Equity</option>
+                        <option value="revenue_share">Revenue Share</option>
+                        <option value="crowdfunding">Crowdfunding</option>
+                        <option value="loan">Loan</option>
+                      </select>
+                    </div>
+                    <div>
+                      <Label className="text-foreground">Goal Amount (ZMW)</Label>
+                      <Input type="number" min="1" value={campGoal} onChange={(e) => setCampGoal(e.target.value)} required className="mt-1 bg-secondary border-border" />
+                    </div>
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground font-medium pt-2 border-t border-border/30">Proposal Details (optional but recommended)</p>
+                  
                   <div>
-                    <Label className="text-foreground">Funding Type</Label>
-                    <select
-                      value={campType}
-                      onChange={(e) => setCampType(e.target.value as any)}
-                      className="w-full mt-1 rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground"
-                    >
-                      <option value="equity">Equity</option>
-                      <option value="revenue_share">Revenue Share</option>
-                      <option value="crowdfunding">Crowdfunding</option>
-                      <option value="loan">Loan</option>
-                    </select>
+                    <Label className="text-foreground">Problem</Label>
+                    <textarea value={campProblem} onChange={(e) => setCampProblem(e.target.value)} rows={2}
+                      className="w-full mt-1 rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      placeholder="What problem are you solving?" />
                   </div>
                   <div>
-                    <Label className="text-foreground">Goal Amount (ZMW)</Label>
-                    <Input type="number" min="1" value={campGoal} onChange={(e) => setCampGoal(e.target.value)} required className="mt-1 bg-secondary border-border" />
+                    <Label className="text-foreground">Solution</Label>
+                    <textarea value={campSolution} onChange={(e) => setCampSolution(e.target.value)} rows={2}
+                      className="w-full mt-1 rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      placeholder="How does your business solve it?" />
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-foreground">Market Size</Label>
+                      <Input value={campMarket} onChange={(e) => setCampMarket(e.target.value)} placeholder="e.g. $500M TAM" className="mt-1 bg-secondary border-border" />
+                    </div>
+                    <div>
+                      <Label className="text-foreground">Revenue Model</Label>
+                      <Input value={campRevenue} onChange={(e) => setCampRevenue(e.target.value)} placeholder="e.g. SaaS subscription" className="mt-1 bg-secondary border-border" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-foreground">Traction</Label>
+                    <Input value={campTraction} onChange={(e) => setCampTraction(e.target.value)} placeholder="e.g. 1,000 users, K50k MRR" className="mt-1 bg-secondary border-border" />
+                  </div>
+                  <div>
+                    <Label className="text-foreground">Use of Funds</Label>
+                    <textarea value={campUseOfFunds} onChange={(e) => setCampUseOfFunds(e.target.value)} rows={2}
+                      className="w-full mt-1 rounded-md border border-border bg-secondary px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      placeholder="How will the funds be used?" />
+                  </div>
+                  <div>
+                    <Label className="text-foreground">Proposal Document (PDF)</Label>
+                    <div className="mt-1">
+                      <label className="flex items-center gap-2 px-4 py-2 bg-secondary border border-border rounded-md cursor-pointer hover:bg-surface-hover transition-colors text-sm text-muted-foreground">
+                        <Upload size={16} />
+                        {campProposalFile ? campProposalFile.name : "Choose file"}
+                        <input type="file" accept=".pdf" className="hidden" onChange={(e) => setCampProposalFile(e.target.files?.[0] ?? null)} />
+                      </label>
+                    </div>
                   </div>
                   <div className="flex gap-3">
                     <Button type="submit" variant="hero" disabled={campSubmitting}>

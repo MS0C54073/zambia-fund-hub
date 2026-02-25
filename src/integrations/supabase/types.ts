@@ -18,50 +18,62 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          equity_offered: number | null
           financial_projections: Json | null
           id: string
           industry: string | null
           is_approved: boolean
           is_verified: boolean
+          logo_url: string | null
           name: string
           owner_id: string
           pitch_deck_url: string | null
+          pitch_summary: string | null
           province: string | null
           registration_doc_url: string | null
           registration_number: string | null
           updated_at: string
+          valuation: number | null
         }
         Insert: {
           created_at?: string
           description?: string | null
+          equity_offered?: number | null
           financial_projections?: Json | null
           id?: string
           industry?: string | null
           is_approved?: boolean
           is_verified?: boolean
+          logo_url?: string | null
           name: string
           owner_id: string
           pitch_deck_url?: string | null
+          pitch_summary?: string | null
           province?: string | null
           registration_doc_url?: string | null
           registration_number?: string | null
           updated_at?: string
+          valuation?: number | null
         }
         Update: {
           created_at?: string
           description?: string | null
+          equity_offered?: number | null
           financial_projections?: Json | null
           id?: string
           industry?: string | null
           is_approved?: boolean
           is_verified?: boolean
+          logo_url?: string | null
           name?: string
           owner_id?: string
           pitch_deck_url?: string | null
+          pitch_summary?: string | null
           province?: string | null
           registration_doc_url?: string | null
           registration_number?: string | null
           updated_at?: string
+          valuation?: number | null
         }
         Relationships: []
       }
@@ -76,6 +88,13 @@ export type Database = {
           id: string
           loan_interest_rate: number | null
           loan_term_months: number | null
+          proposal_doc_url: string | null
+          proposal_market_size: string | null
+          proposal_problem: string | null
+          proposal_revenue_model: string | null
+          proposal_solution: string | null
+          proposal_traction: string | null
+          proposal_use_of_funds: string | null
           raised_amount: number
           revenue_share_percentage: number | null
           reward_tiers: Json | null
@@ -93,6 +112,13 @@ export type Database = {
           id?: string
           loan_interest_rate?: number | null
           loan_term_months?: number | null
+          proposal_doc_url?: string | null
+          proposal_market_size?: string | null
+          proposal_problem?: string | null
+          proposal_revenue_model?: string | null
+          proposal_solution?: string | null
+          proposal_traction?: string | null
+          proposal_use_of_funds?: string | null
           raised_amount?: number
           revenue_share_percentage?: number | null
           reward_tiers?: Json | null
@@ -110,6 +136,13 @@ export type Database = {
           id?: string
           loan_interest_rate?: number | null
           loan_term_months?: number | null
+          proposal_doc_url?: string | null
+          proposal_market_size?: string | null
+          proposal_problem?: string | null
+          proposal_revenue_model?: string | null
+          proposal_solution?: string | null
+          proposal_traction?: string | null
+          proposal_use_of_funds?: string | null
           raised_amount?: number
           revenue_share_percentage?: number | null
           reward_tiers?: Json | null
@@ -180,6 +213,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          is_suspended: boolean
           is_verified: boolean
           phone: string | null
           province: string | null
@@ -192,6 +226,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          is_suspended?: boolean
           is_verified?: boolean
           phone?: string | null
           province?: string | null
@@ -204,6 +239,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          is_suspended?: boolean
           is_verified?: boolean
           phone?: string | null
           province?: string | null
