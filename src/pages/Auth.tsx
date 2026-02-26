@@ -43,6 +43,7 @@ const Auth = () => {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        // Auth state change in useAuth will handle navigation
         window.location.href = "/dashboard";
       }
     } catch (error: any) {
