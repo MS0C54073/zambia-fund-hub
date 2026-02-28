@@ -108,7 +108,9 @@ const Dashboard = () => {
         .from("campaigns")
         .select("*")
         .in("business_id", biz.map((b) => b.id));
-      setCampaigns(campData ?? []);
+      const camps = campData ?? [];
+      setCampaigns(camps);
+      seedAmounts(camps);
     }
 
     const rawInv = (invRes.data ?? []) as any[];
