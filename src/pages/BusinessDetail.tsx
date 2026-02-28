@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "@/components/landing/Navbar";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useRealtimeCampaigns } from "@/hooks/useRealtimeCampaigns";
+import RealtimeProgressBar from "@/components/RealtimeProgressBar";
 import { motion } from "framer-motion";
 import { MapPin, TrendingUp, ArrowLeft, DollarSign } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
