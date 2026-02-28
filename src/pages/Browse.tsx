@@ -108,9 +108,6 @@ const Browse = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((biz, i) => {
               const camp = biz.campaign;
-              const progress = camp
-                ? Math.round((Number(camp.raised_amount) / Number(camp.goal_amount)) * 100)
-                : 0;
               return (
                 <motion.div
                   key={biz.id}
