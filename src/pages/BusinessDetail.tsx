@@ -29,6 +29,16 @@ const BusinessDetail = () => {
     supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user?.id ?? null));
   }, []);
 
+  // Real-time campaign updates
+  const handleCampaignUpdate = useCallback((updated: Campaign) => {
+    setCampaign((prev) => (prev?.id === updated.id ? updated : prev));
+  }, []);
+
+  const { seedAmounts } = useRealtimeCampaigns({
+    onUpdate: handleCampaignUpdate,
+    notifyOnFunding: true,
+  });
+
   useEffect(() => {
     if (!id) return;
     const fetch = async () => {
