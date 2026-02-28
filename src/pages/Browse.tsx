@@ -138,16 +138,11 @@ const Browse = () => {
                   </div>
 
                   {camp && (
-                    <div className="mb-3">
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">K{(Number(camp.raised_amount) / 1000).toFixed(0)}k raised</span>
-                        <span className="text-primary font-medium">{progress}%</span>
-                      </div>
-                      <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-gold rounded-full transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">Goal: K{(Number(camp.goal_amount) / 1000).toFixed(0)}k ZMW</p>
-                    </div>
+                    <RealtimeProgressBar
+                      raised={Number(camp.raised_amount)}
+                      goal={Number(camp.goal_amount)}
+                      className="mb-3"
+                    />
                   )}
 
                   <Button variant="hero-outline" size="sm" className="w-full" asChild>
