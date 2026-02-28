@@ -403,12 +403,14 @@ const Dashboard = () => {
                           <p className="text-xs text-muted-foreground">No campaigns yet.</p>
                         ) : (
                           bizCampaigns.map((camp) => (
-                            <div key={camp.id} className="bg-secondary rounded-lg p-3 mb-2 flex items-center justify-between">
+                            <div key={camp.id} className="bg-secondary rounded-lg p-3 mb-2">
+                              <div className="flex items-center justify-between mb-2">
                               <div>
                                 <span className="text-xs font-medium text-primary capitalize">{camp.funding_type.replace("_", " ")}</span>
                                 <div className="text-sm text-foreground mt-0.5">
                                   K{Number(camp.raised_amount).toLocaleString()} / K{Number(camp.goal_amount).toLocaleString()}
                                 </div>
+                              </div>
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className={`text-xs px-2 py-0.5 rounded-full ${
