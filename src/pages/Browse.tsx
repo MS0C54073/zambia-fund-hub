@@ -22,8 +22,22 @@ const Browse = () => {
   const [businesses, setBusinesses] = useState<BizWithCampaign[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Real-time: update campaign data when it changes
+  const handleCampaignUpdate = useCallback((updated: Tables<"campaigns">) => {
+    setBusinesses((prev) =>
+      prev.map((b) =>
+        b.campaign?.id === updated.id ? { ...b, campaign: updated } : b
+      )
+    );
+  }, []);
+
+  const { seedAmounts } = useRealtimeCampaigns({
+    onUpdate: handleCampaignUpdate,
+    notifyOnFunding: true,
+  });
+
   useEffect(() => {
-    const fetch = async () => {
+    const fetchData = async () => {
       const { data: bizData } = await supabase
         .from("businesses")
         .select("*")
@@ -38,14 +52,16 @@ const Browse = () => {
           .in("business_id", biz.map((b) => b.id))
           .eq("status", "active");
 
-        const campMap = new Map((campData ?? []).map((c) => [c.business_id, c]));
+        const camps = campData ?? [];
+        seedAmounts(camps);
+        const campMap = new Map(camps.map((c) => [c.business_id, c]));
         setBusinesses(biz.map((b) => ({ ...b, campaign: campMap.get(b.id) ?? null })));
       } else {
         setBusinesses([]);
       }
       setLoading(false);
     };
-    fetch();
+    fetchData();
   }, []);
 
   const filtered = businesses.filter(
