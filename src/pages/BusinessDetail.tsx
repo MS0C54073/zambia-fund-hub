@@ -53,6 +53,7 @@ const BusinessDetail = () => {
           .limit(1)
           .maybeSingle();
         setCampaign(camp);
+        if (camp) seedAmounts([camp]);
       }
       setLoading(false);
     };
