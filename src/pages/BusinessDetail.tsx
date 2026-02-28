@@ -162,9 +162,11 @@ const BusinessDetail = () => {
                   </div>
                   <span className="text-lg font-bold text-primary">{progress}%</span>
                 </div>
-                <div className="h-2 bg-background rounded-full overflow-hidden mb-6">
-                  <div className="h-full bg-gradient-gold rounded-full transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
-                </div>
+                <RealtimeProgressBar
+                  raised={Number(campaign.raised_amount)}
+                  goal={Number(campaign.goal_amount)}
+                  className="mb-6"
+                />
 
                 {/* Invest form */}
                 <form onSubmit={handleInvest} className="space-y-3">
