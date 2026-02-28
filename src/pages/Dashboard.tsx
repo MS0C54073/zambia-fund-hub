@@ -427,6 +427,13 @@ const Dashboard = () => {
                                   </Button>
                                 )}
                               </div>
+                              </div>
+                              {camp.status === "active" && (
+                                <RealtimeProgressBar
+                                  raised={Number(camp.raised_amount)}
+                                  goal={Number(camp.goal_amount)}
+                                />
+                              )}
                             </div>
                           ))
                         )}
