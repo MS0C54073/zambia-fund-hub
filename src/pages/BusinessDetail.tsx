@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "@/components/landing/Navbar";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useRealtimeCampaigns } from "@/hooks/useRealtimeCampaigns";
+import RealtimeProgressBar from "@/components/RealtimeProgressBar";
 import { motion } from "framer-motion";
 import { MapPin, TrendingUp, ArrowLeft, DollarSign } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
@@ -27,6 +29,16 @@ const BusinessDetail = () => {
     supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user?.id ?? null));
   }, []);
 
+  // Real-time campaign updates
+  const handleCampaignUpdate = useCallback((updated: Campaign) => {
+    setCampaign((prev) => (prev?.id === updated.id ? updated : prev));
+  }, []);
+
+  const { seedAmounts } = useRealtimeCampaigns({
+    onUpdate: handleCampaignUpdate,
+    notifyOnFunding: true,
+  });
+
   useEffect(() => {
     if (!id) return;
     const fetch = async () => {
@@ -41,6 +53,7 @@ const BusinessDetail = () => {
           .limit(1)
           .maybeSingle();
         setCampaign(camp);
+        if (camp) seedAmounts([camp]);
       }
       setLoading(false);
     };
@@ -149,9 +162,11 @@ const BusinessDetail = () => {
                   </div>
                   <span className="text-lg font-bold text-primary">{progress}%</span>
                 </div>
-                <div className="h-2 bg-background rounded-full overflow-hidden mb-6">
-                  <div className="h-full bg-gradient-gold rounded-full transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
-                </div>
+                <RealtimeProgressBar
+                  raised={Number(campaign.raised_amount)}
+                  goal={Number(campaign.goal_amount)}
+                  className="mb-6"
+                />
 
                 {/* Invest form */}
                 <form onSubmit={handleInvest} className="space-y-3">

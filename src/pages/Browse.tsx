@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/landing/Navbar";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Search, MapPin, TrendingUp, Filter } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeCampaigns } from "@/hooks/useRealtimeCampaigns";
+import RealtimeProgressBar from "@/components/RealtimeProgressBar";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Business = Tables<"businesses">;
@@ -20,8 +22,22 @@ const Browse = () => {
   const [businesses, setBusinesses] = useState<BizWithCampaign[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Real-time: update campaign data when it changes
+  const handleCampaignUpdate = useCallback((updated: Tables<"campaigns">) => {
+    setBusinesses((prev) =>
+      prev.map((b) =>
+        b.campaign?.id === updated.id ? { ...b, campaign: updated } : b
+      )
+    );
+  }, []);
+
+  const { seedAmounts } = useRealtimeCampaigns({
+    onUpdate: handleCampaignUpdate,
+    notifyOnFunding: true,
+  });
+
   useEffect(() => {
-    const fetch = async () => {
+    const fetchData = async () => {
       const { data: bizData } = await supabase
         .from("businesses")
         .select("*")
@@ -36,14 +52,16 @@ const Browse = () => {
           .in("business_id", biz.map((b) => b.id))
           .eq("status", "active");
 
-        const campMap = new Map((campData ?? []).map((c) => [c.business_id, c]));
+        const camps = campData ?? [];
+        seedAmounts(camps);
+        const campMap = new Map(camps.map((c) => [c.business_id, c]));
         setBusinesses(biz.map((b) => ({ ...b, campaign: campMap.get(b.id) ?? null })));
       } else {
         setBusinesses([]);
       }
       setLoading(false);
     };
-    fetch();
+    fetchData();
   }, []);
 
   const filtered = businesses.filter(
@@ -90,9 +108,6 @@ const Browse = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((biz, i) => {
               const camp = biz.campaign;
-              const progress = camp
-                ? Math.round((Number(camp.raised_amount) / Number(camp.goal_amount)) * 100)
-                : 0;
               return (
                 <motion.div
                   key={biz.id}
@@ -120,16 +135,11 @@ const Browse = () => {
                   </div>
 
                   {camp && (
-                    <div className="mb-3">
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">K{(Number(camp.raised_amount) / 1000).toFixed(0)}k raised</span>
-                        <span className="text-primary font-medium">{progress}%</span>
-                      </div>
-                      <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-gold rounded-full transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">Goal: K{(Number(camp.goal_amount) / 1000).toFixed(0)}k ZMW</p>
-                    </div>
+                    <RealtimeProgressBar
+                      raised={Number(camp.raised_amount)}
+                      goal={Number(camp.goal_amount)}
+                      className="mb-3"
+                    />
                   )}
 
                   <Button variant="hero-outline" size="sm" className="w-full" asChild>

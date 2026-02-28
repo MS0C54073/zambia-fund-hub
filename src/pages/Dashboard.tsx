@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useRealtimeCampaigns } from "@/hooks/useRealtimeCampaigns";
+import RealtimeProgressBar from "@/components/RealtimeProgressBar";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
@@ -66,6 +68,18 @@ const Dashboard = () => {
   const [profType, setProfType] = useState("");
   const [profSubmitting, setProfSubmitting] = useState(false);
 
+  // Real-time campaign updates
+  const handleCampaignUpdate = useCallback((updated: Tables<"campaigns">) => {
+    setCampaigns((prev) =>
+      prev.map((c) => (c.id === updated.id ? updated : c))
+    );
+  }, []);
+
+  const { seedAmounts } = useRealtimeCampaigns({
+    onUpdate: handleCampaignUpdate,
+    notifyOnFunding: true,
+  });
+
   useEffect(() => {
     if (!user) return;
     fetchData();
@@ -94,7 +108,9 @@ const Dashboard = () => {
         .from("campaigns")
         .select("*")
         .in("business_id", biz.map((b) => b.id));
-      setCampaigns(campData ?? []);
+      const camps = campData ?? [];
+      setCampaigns(camps);
+      seedAmounts(camps);
     }
 
     const rawInv = (invRes.data ?? []) as any[];
@@ -387,28 +403,36 @@ const Dashboard = () => {
                           <p className="text-xs text-muted-foreground">No campaigns yet.</p>
                         ) : (
                           bizCampaigns.map((camp) => (
-                            <div key={camp.id} className="bg-secondary rounded-lg p-3 mb-2 flex items-center justify-between">
-                              <div>
-                                <span className="text-xs font-medium text-primary capitalize">{camp.funding_type.replace("_", " ")}</span>
-                                <div className="text-sm text-foreground mt-0.5">
-                                  K{Number(camp.raised_amount).toLocaleString()} / K{Number(camp.goal_amount).toLocaleString()}
+                            <div key={camp.id} className="bg-secondary rounded-lg p-3 mb-2">
+                              <div className="flex items-center justify-between mb-2">
+                                <div>
+                                  <span className="text-xs font-medium text-primary capitalize">{camp.funding_type.replace("_", " ")}</span>
+                                  <div className="text-sm text-foreground mt-0.5">
+                                    K{Number(camp.raised_amount).toLocaleString()} / K{Number(camp.goal_amount).toLocaleString()}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                    camp.status === "active" ? "bg-green-500/10 text-green-400" :
+                                    camp.status === "draft" ? "bg-muted text-muted-foreground" :
+                                    camp.status === "pending_review" ? "bg-yellow-500/10 text-yellow-400" :
+                                    "bg-muted text-muted-foreground"
+                                  }`}>
+                                    {camp.status.replace("_", " ")}
+                                  </span>
+                                  {camp.status === "draft" && (
+                                    <Button size="sm" variant="outline" onClick={() => submitCampaignForReview(camp.id)}>
+                                      Submit for Review
+                                    </Button>
+                                  )}
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                  camp.status === "active" ? "bg-green-500/10 text-green-400" :
-                                  camp.status === "draft" ? "bg-muted text-muted-foreground" :
-                                  camp.status === "pending_review" ? "bg-yellow-500/10 text-yellow-400" :
-                                  "bg-muted text-muted-foreground"
-                                }`}>
-                                  {camp.status.replace("_", " ")}
-                                </span>
-                                {camp.status === "draft" && (
-                                  <Button size="sm" variant="outline" onClick={() => submitCampaignForReview(camp.id)}>
-                                    Submit for Review
-                                  </Button>
-                                )}
-                              </div>
+                              {camp.status === "active" && (
+                                <RealtimeProgressBar
+                                  raised={Number(camp.raised_amount)}
+                                  goal={Number(camp.goal_amount)}
+                                />
+                              )}
                             </div>
                           ))
                         )}
