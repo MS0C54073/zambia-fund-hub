@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/landing/Navbar";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Search, MapPin, TrendingUp, Filter } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeCampaigns } from "@/hooks/useRealtimeCampaigns";
+import RealtimeProgressBar from "@/components/RealtimeProgressBar";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Business = Tables<"businesses">;
