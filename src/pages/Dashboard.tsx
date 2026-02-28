@@ -68,6 +68,18 @@ const Dashboard = () => {
   const [profType, setProfType] = useState("");
   const [profSubmitting, setProfSubmitting] = useState(false);
 
+  // Real-time campaign updates
+  const handleCampaignUpdate = useCallback((updated: Tables<"campaigns">) => {
+    setCampaigns((prev) =>
+      prev.map((c) => (c.id === updated.id ? updated : c))
+    );
+  }, []);
+
+  const { seedAmounts } = useRealtimeCampaigns({
+    onUpdate: handleCampaignUpdate,
+    notifyOnFunding: true,
+  });
+
   useEffect(() => {
     if (!user) return;
     fetchData();
