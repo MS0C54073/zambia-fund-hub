@@ -22,10 +22,10 @@ type Campaign = Tables<"campaigns">;
 type Investment = Tables<"investments">;
 
 const navItems = [
-  { icon: LayoutDashboard, label: "Overview", path: "/dashboard" },
-  { icon: Briefcase, label: "My Businesses", path: "/dashboard/businesses" },
-  { icon: TrendingUp, label: "Investments", path: "/dashboard/investments" },
-  { icon: User, label: "Profile", path: "/dashboard/profile" },
+  { icon: LayoutDashboard, label: "Overview", tab: "overview" },
+  { icon: Briefcase, label: "My Businesses", tab: "businesses" },
+  { icon: TrendingUp, label: "Investments", tab: "investments" },
+  { icon: User, label: "Profile", tab: "profile" },
 ];
 
 const Dashboard = () => {
