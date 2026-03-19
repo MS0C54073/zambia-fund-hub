@@ -113,7 +113,7 @@ const Admin = () => {
   const totalInvested = investments.reduce((s: number, i: any) => s + Number(i.amount), 0);
 
   return (
-    <DashboardLayout navItems={adminNav} onSignOut={signOut}>
+    <DashboardLayout navItems={adminNav} activeTab={tab} onTabChange={setTab} onSignOut={signOut}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div className="mb-8">
           <h1 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">

@@ -249,7 +249,7 @@ const Dashboard = () => {
   const totalRaised = campaigns.reduce((s, c) => s + Number(c.raised_amount), 0);
 
   return (
-    <DashboardLayout navItems={navItems} onSignOut={signOut}>
+    <DashboardLayout navItems={navItems} activeTab={activeTab} onTabChange={setActiveTab} onSignOut={signOut}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div className="mb-8">
           <h1 className="text-2xl font-display font-bold text-foreground">
