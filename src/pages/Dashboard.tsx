@@ -22,10 +22,10 @@ type Campaign = Tables<"campaigns">;
 type Investment = Tables<"investments">;
 
 const navItems = [
-  { icon: LayoutDashboard, label: "Overview", path: "/dashboard" },
-  { icon: Briefcase, label: "My Businesses", path: "/dashboard/businesses" },
-  { icon: TrendingUp, label: "Investments", path: "/dashboard/investments" },
-  { icon: User, label: "Profile", path: "/dashboard/profile" },
+  { icon: LayoutDashboard, label: "Overview", tab: "overview" },
+  { icon: Briefcase, label: "My Businesses", tab: "businesses" },
+  { icon: TrendingUp, label: "Investments", tab: "investments" },
+  { icon: User, label: "Profile", tab: "profile" },
 ];
 
 const Dashboard = () => {
@@ -249,7 +249,7 @@ const Dashboard = () => {
   const totalRaised = campaigns.reduce((s, c) => s + Number(c.raised_amount), 0);
 
   return (
-    <DashboardLayout navItems={navItems} onSignOut={signOut}>
+    <DashboardLayout navItems={navItems} activeTab={activeTab} onTabChange={setActiveTab} onSignOut={signOut}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div className="mb-8">
           <h1 className="text-2xl font-display font-bold text-foreground">
