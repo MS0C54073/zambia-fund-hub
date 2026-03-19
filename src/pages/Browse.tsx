@@ -4,7 +4,7 @@ import Navbar from "@/components/landing/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MapPin, TrendingUp, Filter, X } from "lucide-react";
+import { Search, MapPin, TrendingUp, Filter, X, ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeCampaigns } from "@/hooks/useRealtimeCampaigns";
@@ -30,6 +30,15 @@ const FUNDING_TYPES = [
   { value: "loan", label: "Loan" },
 ];
 
+const SORT_OPTIONS = [
+  { value: "newest", label: "Newest First" },
+  { value: "most_funded", label: "Most Funded" },
+  { value: "closest_to_goal", label: "Closest to Goal" },
+  { value: "name_asc", label: "Name A–Z" },
+];
+
+const PAGE_SIZE = 9;
+
 const Browse = () => {
   const [search, setSearch] = useState("");
   const [businesses, setBusinesses] = useState<BizWithCampaign[]>([]);
@@ -38,6 +47,8 @@ const Browse = () => {
   const [industryFilter, setIndustryFilter] = useState<string>("all");
   const [provinceFilter, setProvinceFilter] = useState<string>("all");
   const [fundingTypeFilter, setFundingTypeFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("newest");
+  const [page, setPage] = useState(1);
 
   const handleCampaignUpdate = useCallback((updated: Tables<"campaigns">) => {
     setBusinesses((prev) =>
@@ -80,15 +91,15 @@ const Browse = () => {
     fetchData();
   }, []);
 
-  // Derive unique industries from data
   const industries = useMemo(() => {
     const set = new Set<string>();
     businesses.forEach((b) => { if (b.industry) set.add(b.industry); });
     return Array.from(set).sort();
   }, [businesses]);
 
-  const filtered = useMemo(() => {
-    return businesses.filter((b) => {
+  // Filter + sort
+  const sortedFiltered = useMemo(() => {
+    const result = businesses.filter((b) => {
       const matchesSearch =
         b.name.toLowerCase().includes(search.toLowerCase()) ||
         (b.industry ?? "").toLowerCase().includes(search.toLowerCase());
@@ -98,7 +109,35 @@ const Browse = () => {
         fundingTypeFilter === "all" || b.campaign?.funding_type === fundingTypeFilter;
       return matchesSearch && matchesIndustry && matchesProvince && matchesFunding;
     });
-  }, [businesses, search, industryFilter, provinceFilter, fundingTypeFilter]);
+
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case "most_funded": {
+          const aRaised = Number(a.campaign?.raised_amount ?? 0);
+          const bRaised = Number(b.campaign?.raised_amount ?? 0);
+          return bRaised - aRaised;
+        }
+        case "closest_to_goal": {
+          const aPct = a.campaign ? Number(a.campaign.raised_amount) / Number(a.campaign.goal_amount) : 0;
+          const bPct = b.campaign ? Number(b.campaign.raised_amount) / Number(b.campaign.goal_amount) : 0;
+          return bPct - aPct;
+        }
+        case "name_asc":
+          return a.name.localeCompare(b.name);
+        case "newest":
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+    return result;
+  }, [businesses, search, industryFilter, provinceFilter, fundingTypeFilter, sortBy]);
+
+  // Reset page when filters/sort/search change
+  useEffect(() => { setPage(1); }, [search, industryFilter, provinceFilter, fundingTypeFilter, sortBy]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedFiltered.length / PAGE_SIZE));
+  const paged = sortedFiltered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const activeFilterCount = [industryFilter, provinceFilter, fundingTypeFilter].filter(
     (f) => f !== "all"
@@ -131,6 +170,19 @@ const Browse = () => {
               className="pl-10 bg-secondary border-border"
             />
           </div>
+
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="bg-secondary border-border w-full md:w-48 gap-2">
+              <ArrowUpDown size={14} className="text-muted-foreground shrink-0" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Button
             variant="outline"
             className="gap-2"
@@ -201,61 +253,105 @@ const Browse = () => {
           )}
         </AnimatePresence>
 
+        {/* Result count */}
+        {!loading && sortedFiltered.length > 0 && (
+          <p className="text-sm text-muted-foreground mb-4">
+            Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, sortedFiltered.length)} of {sortedFiltered.length} businesses
+          </p>
+        )}
+
         {loading ? (
           <div className="flex justify-center py-20">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : filtered.length === 0 ? (
+        ) : sortedFiltered.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             {activeFilterCount > 0 || search
               ? "No businesses match your filters. Try adjusting your criteria."
               : "No approved businesses found. Check back soon!"}
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((biz, i) => {
-              const camp = biz.campaign;
-              return (
-                <motion.div
-                  key={biz.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="bg-card rounded-2xl border border-border/50 p-6 hover:border-primary/30 transition-all group"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      {camp && (
-                        <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full capitalize">
-                          {camp.funding_type.replace("_", " ")}
-                        </span>
-                      )}
-                      <h3 className="text-lg font-display font-semibold text-foreground mt-2">{biz.name}</h3>
+          <>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {paged.map((biz, i) => {
+                const camp = biz.campaign;
+                return (
+                  <motion.div
+                    key={biz.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="bg-card rounded-2xl border border-border/50 p-6 hover:border-primary/30 transition-all group"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        {camp && (
+                          <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full capitalize">
+                            {camp.funding_type.replace("_", " ")}
+                          </span>
+                        )}
+                        <h3 className="text-lg font-display font-semibold text-foreground mt-2">{biz.name}</h3>
+                      </div>
                     </div>
-                  </div>
 
-                  <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{biz.description}</p>
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{biz.description}</p>
 
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
-                    {biz.province && <span className="flex items-center gap-1"><MapPin size={12} /> {biz.province}</span>}
-                    {biz.industry && <span className="flex items-center gap-1"><TrendingUp size={12} /> {biz.industry}</span>}
-                  </div>
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground mb-4">
+                      {biz.province && <span className="flex items-center gap-1"><MapPin size={12} /> {biz.province}</span>}
+                      {biz.industry && <span className="flex items-center gap-1"><TrendingUp size={12} /> {biz.industry}</span>}
+                    </div>
 
-                  {camp && (
-                    <RealtimeProgressBar
-                      raised={Number(camp.raised_amount)}
-                      goal={Number(camp.goal_amount)}
-                      className="mb-3"
-                    />
-                  )}
+                    {camp && (
+                      <RealtimeProgressBar
+                        raised={Number(camp.raised_amount)}
+                        goal={Number(camp.goal_amount)}
+                        className="mb-3"
+                      />
+                    )}
 
-                  <Button variant="hero-outline" size="sm" className="w-full" asChild>
-                    <Link to={`/business/${biz.id}`}>View Details</Link>
+                    <Button variant="hero-outline" size="sm" className="w-full" asChild>
+                      <Link to={`/business/${biz.id}`}>View Details</Link>
+                    </Button>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-10">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => p - 1)}
+                >
+                  <ChevronLeft size={16} />
+                </Button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <Button
+                    key={p}
+                    variant={p === page ? "default" : "outline"}
+                    size="icon"
+                    onClick={() => setPage(p)}
+                    className="w-9 h-9"
+                  >
+                    {p}
                   </Button>
-                </motion.div>
-              );
-            })}
-          </div>
+                ))}
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  <ChevronRight size={16} />
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
