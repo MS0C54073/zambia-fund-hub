@@ -16,7 +16,7 @@ import AdminTransactionsTab from "@/components/admin/AdminTransactionsTab";
 type AppRole = Database["public"]["Enums"]["app_role"];
 
 const adminNav = [
-  { icon: Shield, label: "Admin Dashboard", path: "/admin" },
+  { icon: Shield, label: "Admin Dashboard", tab: "overview" },
 ];
 
 const Admin = () => {
