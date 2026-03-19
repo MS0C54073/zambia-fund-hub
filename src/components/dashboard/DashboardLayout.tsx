@@ -19,7 +19,7 @@ export default function DashboardLayout({ children, navItems, onSignOut }: Props
   return (
     <div className="min-h-screen bg-background flex">
       <aside className="hidden md:flex w-64 flex-col bg-card border-r border-border/50 p-6">
-        <Link to="/" className="flex items-center gap-2 mb-10">
+        <Link to="/dashboard" className="flex items-center gap-2 mb-10">
           <div className="w-8 h-8 rounded-lg bg-gradient-gold flex items-center justify-center font-display font-bold text-primary-foreground text-sm">
             ZF
           </div>
