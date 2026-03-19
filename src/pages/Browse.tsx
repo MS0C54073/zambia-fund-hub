@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/landing/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, MapPin, TrendingUp, Filter } from "lucide-react";
-import { motion } from "framer-motion";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, MapPin, TrendingUp, Filter, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeCampaigns } from "@/hooks/useRealtimeCampaigns";
 import RealtimeProgressBar from "@/components/RealtimeProgressBar";
@@ -17,12 +18,27 @@ interface BizWithCampaign extends Business {
   campaign?: Campaign | null;
 }
 
+const PROVINCES = [
+  "Central", "Copperbelt", "Eastern", "Luapula", "Lusaka",
+  "Muchinga", "Northern", "North-Western", "Southern", "Western",
+];
+
+const FUNDING_TYPES = [
+  { value: "equity", label: "Equity" },
+  { value: "revenue_share", label: "Revenue Share" },
+  { value: "crowdfunding", label: "Crowdfunding" },
+  { value: "loan", label: "Loan" },
+];
+
 const Browse = () => {
   const [search, setSearch] = useState("");
   const [businesses, setBusinesses] = useState<BizWithCampaign[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
+  const [industryFilter, setIndustryFilter] = useState<string>("all");
+  const [provinceFilter, setProvinceFilter] = useState<string>("all");
+  const [fundingTypeFilter, setFundingTypeFilter] = useState<string>("all");
 
-  // Real-time: update campaign data when it changes
   const handleCampaignUpdate = useCallback((updated: Tables<"campaigns">) => {
     setBusinesses((prev) =>
       prev.map((b) =>
@@ -64,11 +80,35 @@ const Browse = () => {
     fetchData();
   }, []);
 
-  const filtered = businesses.filter(
-    (b) =>
-      b.name.toLowerCase().includes(search.toLowerCase()) ||
-      (b.industry ?? "").toLowerCase().includes(search.toLowerCase())
-  );
+  // Derive unique industries from data
+  const industries = useMemo(() => {
+    const set = new Set<string>();
+    businesses.forEach((b) => { if (b.industry) set.add(b.industry); });
+    return Array.from(set).sort();
+  }, [businesses]);
+
+  const filtered = useMemo(() => {
+    return businesses.filter((b) => {
+      const matchesSearch =
+        b.name.toLowerCase().includes(search.toLowerCase()) ||
+        (b.industry ?? "").toLowerCase().includes(search.toLowerCase());
+      const matchesIndustry = industryFilter === "all" || b.industry === industryFilter;
+      const matchesProvince = provinceFilter === "all" || b.province === provinceFilter;
+      const matchesFunding =
+        fundingTypeFilter === "all" || b.campaign?.funding_type === fundingTypeFilter;
+      return matchesSearch && matchesIndustry && matchesProvince && matchesFunding;
+    });
+  }, [businesses, search, industryFilter, provinceFilter, fundingTypeFilter]);
+
+  const activeFilterCount = [industryFilter, provinceFilter, fundingTypeFilter].filter(
+    (f) => f !== "all"
+  ).length;
+
+  const clearFilters = () => {
+    setIndustryFilter("all");
+    setProvinceFilter("all");
+    setFundingTypeFilter("all");
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -81,7 +121,7 @@ const Browse = () => {
           <p className="text-muted-foreground">Discover verified Zambian businesses ready for investment.</p>
         </motion.div>
 
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
+        <div className="flex flex-col md:flex-row gap-4 mb-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
             <Input
@@ -91,10 +131,75 @@ const Browse = () => {
               className="pl-10 bg-secondary border-border"
             />
           </div>
-          <Button variant="outline" className="gap-2">
-            <Filter size={16} /> Filters
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => setShowFilters((v) => !v)}
+          >
+            <Filter size={16} />
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="ml-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
           </Button>
         </div>
+
+        <AnimatePresence>
+          {showFilters && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden mb-6"
+            >
+              <div className="flex flex-col sm:flex-row gap-3 p-4 bg-card border border-border/50 rounded-xl">
+                <Select value={industryFilter} onValueChange={setIndustryFilter}>
+                  <SelectTrigger className="bg-secondary border-border sm:w-48">
+                    <SelectValue placeholder="Industry" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Industries</SelectItem>
+                    {industries.map((ind) => (
+                      <SelectItem key={ind} value={ind}>{ind}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={provinceFilter} onValueChange={setProvinceFilter}>
+                  <SelectTrigger className="bg-secondary border-border sm:w-48">
+                    <SelectValue placeholder="Province" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Provinces</SelectItem>
+                    {PROVINCES.map((p) => (
+                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={fundingTypeFilter} onValueChange={setFundingTypeFilter}>
+                  <SelectTrigger className="bg-secondary border-border sm:w-48">
+                    <SelectValue placeholder="Funding Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    {FUNDING_TYPES.map((ft) => (
+                      <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {activeFilterCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground">
+                    <X size={14} /> Clear
+                  </Button>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {loading ? (
           <div className="flex justify-center py-20">
@@ -102,7 +207,9 @@ const Browse = () => {
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
-            No approved businesses found. Check back soon!
+            {activeFilterCount > 0 || search
+              ? "No businesses match your filters. Try adjusting your criteria."
+              : "No approved businesses found. Check back soon!"}
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
