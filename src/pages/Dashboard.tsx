@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard, Briefcase, TrendingUp, User, Plus,
-  Upload, MapPin, Clock, CheckCircle, Wallet as WalletIcon, Bookmark, ShieldCheck
+  Upload, MapPin, Clock, CheckCircle, Wallet as WalletIcon, Bookmark
 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -47,7 +47,7 @@ const Dashboard = () => {
 
   // Wallet
   const { wallet, transactions, loading: walletLoading, deposit, withdraw } = useWallet(user?.id);
-  const { savedIds, toggleSave } = useSavedBusinesses(user?.id);
+  const { toggleSave } = useSavedBusinesses(user?.id);
   const [depositOpen, setDepositOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
 
