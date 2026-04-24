@@ -599,34 +599,29 @@ const Dashboard = () => {
 
           {/* INVESTMENTS */}
           <TabsContent value="investments">
-            <h2 className="text-xl font-display font-semibold text-foreground mb-6">My Investments</h2>
-            {investments.length === 0 ? (
-              <div className="bg-card rounded-xl border border-border/50 p-12 text-center">
-                <TrendingUp size={32} className="text-primary mx-auto mb-3" />
-                <p className="text-muted-foreground">No investments yet.</p>
-                <Button variant="hero" className="mt-4" asChild>
-                  <Link to="/browse">Browse Opportunities</Link>
-                </Button>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-display font-semibold text-foreground">My Portfolio</h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Track returns, ROI, and the health of every business you back.
+                </p>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <PortfolioSummary summary={portfolio.summary} walletBalance={walletBalance} />
+            </div>
+
+            {portfolio.loading ? (
+              <div className="bg-card rounded-xl border border-border/50 p-12 text-center text-sm text-muted-foreground">
+                Loading portfolio…
               </div>
             ) : (
-              <div className="space-y-3">
-                {investments.map((inv) => (
-                  <div key={inv.id} className="bg-card rounded-xl border border-border/50 p-5 flex items-center justify-between">
-                    <div>
-                      <h3 className="font-display font-semibold text-foreground text-sm">
-                        {(inv.business as any)?.name ?? "Business"}
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {(inv.campaign as any)?.funding_type?.replace("_", " ")} • {inv.status}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-display font-bold text-foreground">K{Number(inv.amount).toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">{inv.currency}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <InvestmentList
+                all={portfolio.investments}
+                active={portfolio.active}
+                completed={portfolio.completed}
+              />
             )}
           </TabsContent>
 
