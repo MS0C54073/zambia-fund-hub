@@ -1,15 +1,18 @@
 import { useEffect, useState, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/landing/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useRealtimeCampaigns } from "@/hooks/useRealtimeCampaigns";
 import RealtimeProgressBar from "@/components/RealtimeProgressBar";
 import { motion } from "framer-motion";
-import { MapPin, TrendingUp, ArrowLeft, DollarSign } from "lucide-react";
+import { MapPin, TrendingUp, ArrowLeft, Wallet as WalletIcon, Bookmark, BookmarkCheck, ShieldCheck } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useWallet } from "@/hooks/useWallet";
+import { useSavedBusinesses } from "@/hooks/useSavedBusinesses";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Business = Tables<"businesses">;
@@ -17,19 +20,17 @@ type Campaign = Tables<"campaigns">;
 
 const BusinessDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [business, setBusiness] = useState<Business | null>(null);
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [loading, setLoading] = useState(true);
   const [investAmount, setInvestAmount] = useState("");
   const [investing, setInvesting] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setUserId(data.session?.user?.id ?? null));
-  }, []);
+  const { wallet, invest } = useWallet(user?.id);
+  const { isSaved, toggleSave } = useSavedBusinesses(user?.id);
 
-  // Real-time campaign updates
   const handleCampaignUpdate = useCallback((updated: Campaign) => {
     setCampaign((prev) => (prev?.id === updated.id ? updated : prev));
   }, []);
@@ -62,43 +63,50 @@ const BusinessDetail = () => {
 
   const handleInvest = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userId) {
-      toast({ title: "Please sign in", description: "You need to be logged in to invest.", variant: "destructive" });
+    if (!user) {
+      toast.error("Please sign in to invest");
+      navigate("/auth");
       return;
     }
     if (!campaign) return;
-    setInvesting(true);
 
     const amount = parseFloat(investAmount);
     if (isNaN(amount) || amount <= 0) {
-      toast({ title: "Invalid amount", variant: "destructive" });
-      setInvesting(false);
+      toast.error("Enter a valid amount");
       return;
     }
 
-    const { error } = await supabase.from("investments").insert({
-      campaign_id: campaign.id,
-      investor_id: userId,
-      amount,
-      status: "pledged",
-    });
-
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      // Update raised amount
-      await supabase
-        .from("campaigns")
-        .update({ raised_amount: Number(campaign.raised_amount) + amount })
-        .eq("id", campaign.id);
-
-      toast({ title: "Investment pledged!", description: `K${amount.toLocaleString()} ZMW pledged successfully.` });
-      setInvestAmount("");
-      // Refresh campaign
-      const { data: updated } = await supabase.from("campaigns").select("*").eq("id", campaign.id).single();
-      setCampaign(updated);
+    const balance = Number(wallet?.balance ?? 0);
+    if (amount > balance) {
+      toast.error("Insufficient wallet balance", {
+        description: `You have K${balance.toLocaleString()}. Top up your wallet first.`,
+        action: { label: "Go to Wallet", onClick: () => navigate("/dashboard") },
+      });
+      return;
     }
-    setInvesting(false);
+
+    setInvesting(true);
+    try {
+      await invest(campaign.id, amount);
+      toast.success("Investment confirmed!", {
+        description: `K${amount.toLocaleString()} invested in ${business?.name}.`,
+      });
+      setInvestAmount("");
+    } catch (err: any) {
+      toast.error("Investment failed", { description: err.message });
+    } finally {
+      setInvesting(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!user) {
+      toast.error("Please sign in to save businesses");
+      return;
+    }
+    if (!business) return;
+    const nowSaved = await toggleSave(business.id);
+    toast.success(nowSaved ? "Added to saved" : "Removed from saved");
   };
 
   if (loading) {
@@ -122,6 +130,8 @@ const BusinessDetail = () => {
   }
 
   const progress = campaign ? Math.round((Number(campaign.raised_amount) / Number(campaign.goal_amount)) * 100) : 0;
+  const saved = isSaved(business.id);
+  const balance = Number(wallet?.balance ?? 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -133,14 +143,25 @@ const BusinessDetail = () => {
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <div className="bg-card rounded-2xl border border-border/50 p-8">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h1 className="text-3xl font-display font-bold text-foreground">{business.name}</h1>
-                <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+            <div className="flex items-start justify-between mb-4 gap-4">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-3xl font-display font-bold text-foreground">{business.name}</h1>
+                  {business.is_verified && (
+                    <span className="inline-flex items-center gap-1 text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">
+                      <ShieldCheck size={12} /> Verified
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground flex-wrap">
                   {business.industry && <span className="flex items-center gap-1"><TrendingUp size={14} />{business.industry}</span>}
                   {business.province && <span className="flex items-center gap-1"><MapPin size={14} />{business.province}</span>}
                 </div>
               </div>
+              <Button variant="outline" size="sm" onClick={handleSave} className="gap-1 shrink-0">
+                {saved ? <BookmarkCheck size={14} className="text-primary" /> : <Bookmark size={14} />}
+                {saved ? "Saved" : "Save"}
+              </Button>
             </div>
 
             {business.description && (
@@ -168,26 +189,39 @@ const BusinessDetail = () => {
                   className="mb-6"
                 />
 
-                {/* Invest form */}
                 <form onSubmit={handleInvest} className="space-y-3">
-                  <Label className="text-foreground">Invest in this campaign</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-foreground">Invest from your wallet</Label>
+                    {user && (
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <WalletIcon size={12} /> K{balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex gap-3">
                     <div className="relative flex-1">
-                      <DollarSign size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">K</span>
                       <Input
                         type="number"
                         min="1"
+                        step="0.01"
                         placeholder="Amount in ZMW"
                         value={investAmount}
                         onChange={(e) => setInvestAmount(e.target.value)}
-                        className="pl-9 bg-background border-border"
+                        className="pl-7 bg-background border-border"
                         required
                       />
                     </div>
                     <Button type="submit" variant="hero" disabled={investing}>
-                      {investing ? "Processing..." : "Pledge Investment"}
+                      {investing ? "Processing..." : "Invest Now"}
                     </Button>
                   </div>
+                  {user && balance === 0 && (
+                    <p className="text-xs text-yellow-400">
+                      Your wallet is empty.{" "}
+                      <Link to="/dashboard" className="underline">Top up your wallet</Link> to invest.
+                    </p>
+                  )}
                 </form>
               </div>
             )}
