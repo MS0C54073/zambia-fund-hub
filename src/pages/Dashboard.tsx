@@ -28,7 +28,7 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type Business = Tables<"businesses">;
 type Campaign = Tables<"campaigns">;
-type Investment = Tables<"investments">;
+
 
 const navItems = [
   { icon: LayoutDashboard, label: "Overview", tab: "overview" },
@@ -115,9 +115,8 @@ const Dashboard = () => {
 
   const fetchData = async () => {
     if (!user) return;
-    const [bizRes, invRes, savedRes] = await Promise.all([
+    const [bizRes, savedRes] = await Promise.all([
       supabase.from("businesses").select("*").eq("owner_id", user.id),
-      supabase.from("investments").select("*, campaigns(*, businesses(*))").eq("investor_id", user.id),
       supabase.from("saved_businesses").select("business_id, businesses(*)").eq("user_id", user.id),
     ]);
     const biz = (bizRes.data ?? []) as Business[];
@@ -137,15 +136,6 @@ const Dashboard = () => {
       ((savedRes.data ?? []) as any[])
         .map((r) => r.businesses)
         .filter(Boolean) as Business[]
-    );
-
-    const rawInv = (invRes.data ?? []) as any[];
-    setInvestments(
-      rawInv.map((inv) => ({
-        ...inv,
-        campaign: inv.campaigns,
-        business: inv.campaigns?.businesses,
-      }))
     );
   };
 
