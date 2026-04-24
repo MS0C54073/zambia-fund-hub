@@ -43,6 +43,13 @@ const Dashboard = () => {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [investments, setInvestments] = useState<(Investment & { campaign?: Campaign; business?: Business })[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
+  const [savedBusinesses, setSavedBusinesses] = useState<Business[]>([]);
+
+  // Wallet
+  const { wallet, transactions, loading: walletLoading, deposit, withdraw } = useWallet(user?.id);
+  const { savedIds, toggleSave } = useSavedBusinesses(user?.id);
+  const [depositOpen, setDepositOpen] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
 
   // Business form state
   const [showBizForm, setShowBizForm] = useState(false);
