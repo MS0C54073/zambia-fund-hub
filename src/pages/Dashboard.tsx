@@ -630,6 +630,48 @@ const Dashboard = () => {
             )}
           </TabsContent>
 
+          {/* SAVED */}
+          <TabsContent value="saved">
+            <h2 className="text-xl font-display font-semibold text-foreground mb-6">Saved Businesses</h2>
+            {savedBusinesses.length === 0 ? (
+              <div className="bg-card rounded-xl border border-border/50 p-12 text-center">
+                <Bookmark size={32} className="text-primary mx-auto mb-3" />
+                <p className="text-muted-foreground mb-4">No saved businesses yet.</p>
+                <Button variant="hero" asChild>
+                  <Link to="/browse">Browse Opportunities</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-4">
+                {savedBusinesses.map((biz) => (
+                  <div key={biz.id} className="bg-card rounded-xl border border-border/50 p-5">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-display font-semibold text-foreground">{biz.name}</h3>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={async () => {
+                          await toggleSave(biz.id);
+                          setSavedBusinesses((prev) => prev.filter((b) => b.id !== biz.id));
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                    {biz.description && <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{biz.description}</p>}
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+                      {biz.industry && <span>{biz.industry}</span>}
+                      {biz.province && <span className="flex items-center gap-1"><MapPin size={12} />{biz.province}</span>}
+                    </div>
+                    <Button size="sm" variant="hero-outline" className="w-full" asChild>
+                      <Link to={`/business/${biz.id}`}>View Details</Link>
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
           {/* PROFILE */}
           <TabsContent value="profile">
             <h2 className="text-xl font-display font-semibold text-foreground mb-6">My Profile</h2>
