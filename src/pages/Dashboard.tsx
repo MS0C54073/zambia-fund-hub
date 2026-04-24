@@ -269,9 +269,24 @@ const Dashboard = () => {
 
   const totalInvested = investments.reduce((s, i) => s + Number(i.amount), 0);
   const totalRaised = campaigns.reduce((s, c) => s + Number(c.raised_amount), 0);
+  const activeInvestments = investments.filter((i) => {
+    const status = (i.campaign as any)?.status;
+    return status === "active" || status === "pending_review";
+  }).length;
+  const completedInvestments = investments.length - activeInvestments;
+  // Simple ROI placeholder: portfolio value = total invested (until payouts/returns are tracked)
+  const portfolioValue = totalInvested;
+  const walletBalance = Number(wallet?.balance ?? 0);
 
   return (
     <DashboardLayout navItems={navItems} activeTab={activeTab} onTabChange={setActiveTab} onSignOut={signOut}>
+      <DepositDialog open={depositOpen} onOpenChange={setDepositOpen} onDeposit={deposit} />
+      <WithdrawDialog
+        open={withdrawOpen}
+        onOpenChange={setWithdrawOpen}
+        availableBalance={walletBalance}
+        onWithdraw={withdraw}
+      />
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div className="mb-8">
           <h1 className="text-2xl font-display font-bold text-foreground">
@@ -281,27 +296,41 @@ const Dashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
+          <TabsList className="mb-6 flex-wrap h-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="wallet">Wallet</TabsTrigger>
             <TabsTrigger value="businesses">My Businesses</TabsTrigger>
             <TabsTrigger value="investments">Investments</TabsTrigger>
+            <TabsTrigger value="saved">Saved</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
           </TabsList>
 
           {/* OVERVIEW */}
           <TabsContent value="overview">
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-              {[
-                { label: "Total Invested", value: `K${totalInvested.toLocaleString()}` },
-                { label: "Businesses", value: businesses.length.toString() },
-                { label: "Active Campaigns", value: campaigns.filter((c) => c.status === "active").length.toString() },
-                { label: "Total Raised", value: `K${totalRaised.toLocaleString()}` },
-              ].map((stat) => (
-                <div key={stat.label} className="bg-card rounded-xl border border-border/50 p-5">
-                  <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
-                  <p className="text-2xl font-display font-bold text-foreground">{stat.value}</p>
-                </div>
-              ))}
+            <div className="grid lg:grid-cols-3 gap-6 mb-8">
+              <div className="lg:col-span-1">
+                <WalletCard
+                  wallet={wallet}
+                  loading={walletLoading}
+                  onDeposit={() => setDepositOpen(true)}
+                  onWithdraw={() => setWithdrawOpen(true)}
+                />
+              </div>
+
+              <div className="lg:col-span-2 grid sm:grid-cols-2 gap-4">
+                {[
+                  { label: "Portfolio Value", value: `K${portfolioValue.toLocaleString()}`, hint: "Total invested capital" },
+                  { label: "Active Investments", value: activeInvestments.toString(), hint: `${completedInvestments} completed` },
+                  { label: "Businesses Owned", value: businesses.length.toString(), hint: `${campaigns.filter((c) => c.status === "active").length} active campaigns` },
+                  { label: "Total Raised", value: `K${totalRaised.toLocaleString()}`, hint: "Across your campaigns" },
+                ].map((stat) => (
+                  <div key={stat.label} className="bg-card rounded-xl border border-border/50 p-5">
+                    <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
+                    <p className="text-2xl font-display font-bold text-foreground">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{stat.hint}</p>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="bg-card rounded-2xl border border-border/50 p-12 text-center">
@@ -314,13 +343,36 @@ const Dashboard = () => {
               <p className="text-muted-foreground text-sm mb-6 max-w-md mx-auto">
                 Browse investment opportunities or list your business to start raising capital.
               </p>
-              <div className="flex items-center justify-center gap-4">
+              <div className="flex items-center justify-center gap-4 flex-wrap">
                 <Button variant="hero" asChild>
                   <Link to="/browse">Browse Businesses</Link>
                 </Button>
                 <Button variant="hero-outline" onClick={() => { setActiveTab("businesses"); setShowBizForm(true); }}>
                   List Your Business
                 </Button>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* WALLET */}
+          <TabsContent value="wallet">
+            <div className="grid lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1 space-y-4">
+                <WalletCard
+                  wallet={wallet}
+                  loading={walletLoading}
+                  onDeposit={() => setDepositOpen(true)}
+                  onWithdraw={() => setWithdrawOpen(true)}
+                />
+                <div className="bg-card rounded-xl border border-border/50 p-5 text-xs text-muted-foreground">
+                  <p className="font-medium text-foreground mb-2">About your wallet</p>
+                  <p>Top up using MTN, Airtel, or Zamtel mobile money or bank transfer. Funds invested are deducted instantly. Returns and payouts will appear here automatically.</p>
+                  <p className="mt-2 text-yellow-400">Demo mode: payments are simulated.</p>
+                </div>
+              </div>
+              <div className="lg:col-span-2">
+                <h3 className="text-sm font-medium text-foreground mb-3">Recent Transactions</h3>
+                <TransactionList transactions={transactions} emptyText="No wallet activity yet. Make a deposit to get started." />
               </div>
             </div>
           </TabsContent>
