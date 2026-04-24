@@ -271,15 +271,7 @@ const Dashboard = () => {
     );
   }
 
-  const totalInvested = investments.reduce((s, i) => s + Number(i.amount), 0);
   const totalRaised = campaigns.reduce((s, c) => s + Number(c.raised_amount), 0);
-  const activeInvestments = investments.filter((i) => {
-    const status = (i.campaign as any)?.status;
-    return status === "active" || status === "pending_review";
-  }).length;
-  const completedInvestments = investments.length - activeInvestments;
-  // Simple ROI placeholder: portfolio value = total invested (until payouts/returns are tracked)
-  const portfolioValue = totalInvested;
   const walletBalance = Number(wallet?.balance ?? 0);
 
   return (
@@ -311,6 +303,10 @@ const Dashboard = () => {
 
           {/* OVERVIEW */}
           <TabsContent value="overview">
+            <div className="mb-6">
+              <PortfolioSummary summary={portfolio.summary} walletBalance={walletBalance} />
+            </div>
+
             <div className="grid lg:grid-cols-3 gap-6 mb-8">
               <div className="lg:col-span-1">
                 <WalletCard
@@ -323,10 +319,10 @@ const Dashboard = () => {
 
               <div className="lg:col-span-2 grid sm:grid-cols-2 gap-4">
                 {[
-                  { label: "Portfolio Value", value: `K${portfolioValue.toLocaleString()}`, hint: "Total invested capital" },
-                  { label: "Active Investments", value: activeInvestments.toString(), hint: `${completedInvestments} completed` },
                   { label: "Businesses Owned", value: businesses.length.toString(), hint: `${campaigns.filter((c) => c.status === "active").length} active campaigns` },
                   { label: "Total Raised", value: `K${totalRaised.toLocaleString()}`, hint: "Across your campaigns" },
+                  { label: "Pledged", value: portfolio.summary.pledgedCount.toString(), hint: "Awaiting confirmation" },
+                  { label: "Backed Businesses", value: portfolio.summary.uniqueBusinesses.toString(), hint: "Unique investments" },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-card rounded-xl border border-border/50 p-5">
                     <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
