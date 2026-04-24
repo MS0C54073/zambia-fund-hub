@@ -71,10 +71,8 @@ export default function InvestmentCard({ investment }: Props) {
       {campaign && (
         <div className="mb-4">
           <RealtimeProgressBar
-            campaignId={campaign.id}
-            initialAmount={Number(campaign.raised_amount)}
-            goalAmount={Number(campaign.goal_amount)}
-            showLabels
+            raised={Number(campaign.raised_amount)}
+            goal={Number(campaign.goal_amount)}
           />
         </div>
       )}
