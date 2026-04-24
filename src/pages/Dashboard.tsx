@@ -9,12 +9,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeCampaigns } from "@/hooks/useRealtimeCampaigns";
 import { useWallet } from "@/hooks/useWallet";
 import { useSavedBusinesses } from "@/hooks/useSavedBusinesses";
+import { usePortfolio } from "@/hooks/usePortfolio";
 import RealtimeProgressBar from "@/components/RealtimeProgressBar";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import WalletCard from "@/components/wallet/WalletCard";
 import DepositDialog from "@/components/wallet/DepositDialog";
 import WithdrawDialog from "@/components/wallet/WithdrawDialog";
 import TransactionList from "@/components/wallet/TransactionList";
+import PortfolioSummary from "@/components/portfolio/PortfolioSummary";
+import InvestmentList from "@/components/portfolio/InvestmentList";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import {
@@ -45,9 +48,10 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [savedBusinesses, setSavedBusinesses] = useState<Business[]>([]);
 
-  // Wallet
+  // Wallet & portfolio
   const { wallet, transactions, loading: walletLoading, deposit, withdraw } = useWallet(user?.id);
   const { toggleSave } = useSavedBusinesses(user?.id);
+  const portfolio = usePortfolio(user?.id);
   const [depositOpen, setDepositOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
 
