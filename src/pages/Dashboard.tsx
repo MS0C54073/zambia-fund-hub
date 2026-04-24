@@ -588,7 +588,7 @@ const Dashboard = () => {
           </TabsContent>
 
           {/* INVESTMENTS */}
-          <TabsContent value="investments">
+          <TabsContent value="investments" onFocus={() => portfolio.refresh()}>
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-display font-semibold text-foreground">My Portfolio</h2>
