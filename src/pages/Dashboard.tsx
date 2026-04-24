@@ -7,13 +7,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeCampaigns } from "@/hooks/useRealtimeCampaigns";
+import { useWallet } from "@/hooks/useWallet";
+import { useSavedBusinesses } from "@/hooks/useSavedBusinesses";
 import RealtimeProgressBar from "@/components/RealtimeProgressBar";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import WalletCard from "@/components/wallet/WalletCard";
+import DepositDialog from "@/components/wallet/DepositDialog";
+import WithdrawDialog from "@/components/wallet/WithdrawDialog";
+import TransactionList from "@/components/wallet/TransactionList";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard, Briefcase, TrendingUp, User, Plus,
-  Upload, MapPin, Clock, CheckCircle
+  Upload, MapPin, Clock, CheckCircle, Wallet as WalletIcon, Bookmark, ShieldCheck
 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -23,8 +29,10 @@ type Investment = Tables<"investments">;
 
 const navItems = [
   { icon: LayoutDashboard, label: "Overview", tab: "overview" },
+  { icon: WalletIcon, label: "Wallet", tab: "wallet" },
   { icon: Briefcase, label: "My Businesses", tab: "businesses" },
   { icon: TrendingUp, label: "Investments", tab: "investments" },
+  { icon: Bookmark, label: "Saved", tab: "saved" },
   { icon: User, label: "Profile", tab: "profile" },
 ];
 
