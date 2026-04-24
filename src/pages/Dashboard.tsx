@@ -44,7 +44,7 @@ const Dashboard = () => {
   const { toast } = useToast();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [investments, setInvestments] = useState<(Investment & { campaign?: Campaign; business?: Business })[]>([]);
+  
   const [activeTab, setActiveTab] = useState("overview");
   const [savedBusinesses, setSavedBusinesses] = useState<Business[]>([]);
 
