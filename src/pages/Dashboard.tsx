@@ -9,12 +9,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeCampaigns } from "@/hooks/useRealtimeCampaigns";
 import { useWallet } from "@/hooks/useWallet";
 import { useSavedBusinesses } from "@/hooks/useSavedBusinesses";
+import { usePortfolio } from "@/hooks/usePortfolio";
 import RealtimeProgressBar from "@/components/RealtimeProgressBar";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import WalletCard from "@/components/wallet/WalletCard";
 import DepositDialog from "@/components/wallet/DepositDialog";
 import WithdrawDialog from "@/components/wallet/WithdrawDialog";
 import TransactionList from "@/components/wallet/TransactionList";
+import PortfolioSummary from "@/components/portfolio/PortfolioSummary";
+import InvestmentList from "@/components/portfolio/InvestmentList";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import {
@@ -25,7 +28,7 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type Business = Tables<"businesses">;
 type Campaign = Tables<"campaigns">;
-type Investment = Tables<"investments">;
+
 
 const navItems = [
   { icon: LayoutDashboard, label: "Overview", tab: "overview" },
@@ -41,13 +44,14 @@ const Dashboard = () => {
   const { toast } = useToast();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [investments, setInvestments] = useState<(Investment & { campaign?: Campaign; business?: Business })[]>([]);
+  
   const [activeTab, setActiveTab] = useState("overview");
   const [savedBusinesses, setSavedBusinesses] = useState<Business[]>([]);
 
-  // Wallet
+  // Wallet & portfolio
   const { wallet, transactions, loading: walletLoading, deposit, withdraw } = useWallet(user?.id);
   const { toggleSave } = useSavedBusinesses(user?.id);
+  const portfolio = usePortfolio(user?.id);
   const [depositOpen, setDepositOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
 
@@ -111,9 +115,8 @@ const Dashboard = () => {
 
   const fetchData = async () => {
     if (!user) return;
-    const [bizRes, invRes, savedRes] = await Promise.all([
+    const [bizRes, savedRes] = await Promise.all([
       supabase.from("businesses").select("*").eq("owner_id", user.id),
-      supabase.from("investments").select("*, campaigns(*, businesses(*))").eq("investor_id", user.id),
       supabase.from("saved_businesses").select("business_id, businesses(*)").eq("user_id", user.id),
     ]);
     const biz = (bizRes.data ?? []) as Business[];
@@ -133,15 +136,6 @@ const Dashboard = () => {
       ((savedRes.data ?? []) as any[])
         .map((r) => r.businesses)
         .filter(Boolean) as Business[]
-    );
-
-    const rawInv = (invRes.data ?? []) as any[];
-    setInvestments(
-      rawInv.map((inv) => ({
-        ...inv,
-        campaign: inv.campaigns,
-        business: inv.campaigns?.businesses,
-      }))
     );
   };
 
@@ -267,15 +261,7 @@ const Dashboard = () => {
     );
   }
 
-  const totalInvested = investments.reduce((s, i) => s + Number(i.amount), 0);
   const totalRaised = campaigns.reduce((s, c) => s + Number(c.raised_amount), 0);
-  const activeInvestments = investments.filter((i) => {
-    const status = (i.campaign as any)?.status;
-    return status === "active" || status === "pending_review";
-  }).length;
-  const completedInvestments = investments.length - activeInvestments;
-  // Simple ROI placeholder: portfolio value = total invested (until payouts/returns are tracked)
-  const portfolioValue = totalInvested;
   const walletBalance = Number(wallet?.balance ?? 0);
 
   return (
@@ -307,6 +293,10 @@ const Dashboard = () => {
 
           {/* OVERVIEW */}
           <TabsContent value="overview">
+            <div className="mb-6">
+              <PortfolioSummary summary={portfolio.summary} walletBalance={walletBalance} />
+            </div>
+
             <div className="grid lg:grid-cols-3 gap-6 mb-8">
               <div className="lg:col-span-1">
                 <WalletCard
@@ -319,10 +309,10 @@ const Dashboard = () => {
 
               <div className="lg:col-span-2 grid sm:grid-cols-2 gap-4">
                 {[
-                  { label: "Portfolio Value", value: `K${portfolioValue.toLocaleString()}`, hint: "Total invested capital" },
-                  { label: "Active Investments", value: activeInvestments.toString(), hint: `${completedInvestments} completed` },
                   { label: "Businesses Owned", value: businesses.length.toString(), hint: `${campaigns.filter((c) => c.status === "active").length} active campaigns` },
                   { label: "Total Raised", value: `K${totalRaised.toLocaleString()}`, hint: "Across your campaigns" },
+                  { label: "Pledged", value: portfolio.summary.pledgedCount.toString(), hint: "Awaiting confirmation" },
+                  { label: "Backed Businesses", value: portfolio.summary.uniqueBusinesses.toString(), hint: "Unique investments" },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-card rounded-xl border border-border/50 p-5">
                     <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
@@ -598,35 +588,30 @@ const Dashboard = () => {
           </TabsContent>
 
           {/* INVESTMENTS */}
-          <TabsContent value="investments">
-            <h2 className="text-xl font-display font-semibold text-foreground mb-6">My Investments</h2>
-            {investments.length === 0 ? (
-              <div className="bg-card rounded-xl border border-border/50 p-12 text-center">
-                <TrendingUp size={32} className="text-primary mx-auto mb-3" />
-                <p className="text-muted-foreground">No investments yet.</p>
-                <Button variant="hero" className="mt-4" asChild>
-                  <Link to="/browse">Browse Opportunities</Link>
-                </Button>
+          <TabsContent value="investments" onFocus={() => portfolio.refresh()}>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-display font-semibold text-foreground">My Portfolio</h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Track returns, ROI, and the health of every business you back.
+                </p>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <PortfolioSummary summary={portfolio.summary} walletBalance={walletBalance} />
+            </div>
+
+            {portfolio.loading ? (
+              <div className="bg-card rounded-xl border border-border/50 p-12 text-center text-sm text-muted-foreground">
+                Loading portfolio…
               </div>
             ) : (
-              <div className="space-y-3">
-                {investments.map((inv) => (
-                  <div key={inv.id} className="bg-card rounded-xl border border-border/50 p-5 flex items-center justify-between">
-                    <div>
-                      <h3 className="font-display font-semibold text-foreground text-sm">
-                        {(inv.business as any)?.name ?? "Business"}
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {(inv.campaign as any)?.funding_type?.replace("_", " ")} • {inv.status}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-display font-bold text-foreground">K{Number(inv.amount).toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">{inv.currency}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <InvestmentList
+                all={portfolio.investments}
+                active={portfolio.active}
+                completed={portfolio.completed}
+              />
             )}
           </TabsContent>
 
