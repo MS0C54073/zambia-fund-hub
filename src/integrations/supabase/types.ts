@@ -249,6 +249,35 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_businesses: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_businesses_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           amount: number
@@ -317,6 +346,115 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          completed_at: string | null
+          created_at: string
+          currency: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          phone_number: string | null
+          provider: Database["public"]["Enums"]["payment_provider"] | null
+          provider_reference: string | null
+          related_campaign_id: string | null
+          related_investment_id: string | null
+          status: Database["public"]["Enums"]["wallet_tx_status"]
+          type: Database["public"]["Enums"]["wallet_tx_type"]
+          user_id: string
+          wallet_id: string
+        }
+        Insert: {
+          amount: number
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          phone_number?: string | null
+          provider?: Database["public"]["Enums"]["payment_provider"] | null
+          provider_reference?: string | null
+          related_campaign_id?: string | null
+          related_investment_id?: string | null
+          status?: Database["public"]["Enums"]["wallet_tx_status"]
+          type: Database["public"]["Enums"]["wallet_tx_type"]
+          user_id: string
+          wallet_id: string
+        }
+        Update: {
+          amount?: number
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          phone_number?: string | null
+          provider?: Database["public"]["Enums"]["payment_provider"] | null
+          provider_reference?: string | null
+          related_campaign_id?: string | null
+          related_investment_id?: string | null
+          status?: Database["public"]["Enums"]["wallet_tx_status"]
+          type?: Database["public"]["Enums"]["wallet_tx_type"]
+          user_id?: string
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_related_campaign_id_fkey"
+            columns: ["related_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_transactions_related_investment_id_fkey"
+            columns: ["related_investment_id"]
+            isOneToOne: false
+            referencedRelation: "investments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          currency: string
+          id: string
+          pending_balance: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          pending_balance?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          pending_balance?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -328,6 +466,27 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      wallet_deposit: {
+        Args: {
+          _amount: number
+          _phone?: string
+          _provider: Database["public"]["Enums"]["payment_provider"]
+          _reference?: string
+        }
+        Returns: string
+      }
+      wallet_invest: {
+        Args: { _amount: number; _campaign_id: string }
+        Returns: string
+      }
+      wallet_withdraw: {
+        Args: {
+          _amount: number
+          _phone?: string
+          _provider: Database["public"]["Enums"]["payment_provider"]
+        }
+        Returns: string
       }
     }
     Enums: {
@@ -341,6 +500,21 @@ export type Database = {
         | "rejected"
       funding_type: "equity" | "revenue_share" | "crowdfunding" | "loan"
       investment_status: "pledged" | "paid" | "confirmed" | "refunded"
+      payment_provider:
+        | "mtn_momo"
+        | "airtel_money"
+        | "zamtel_kwacha"
+        | "bank_transfer"
+        | "wallet"
+        | "flutterwave"
+      wallet_tx_status: "pending" | "completed" | "failed" | "cancelled"
+      wallet_tx_type:
+        | "deposit"
+        | "withdrawal"
+        | "investment"
+        | "payout"
+        | "refund"
+        | "fee"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -479,6 +653,23 @@ export const Constants = {
       ],
       funding_type: ["equity", "revenue_share", "crowdfunding", "loan"],
       investment_status: ["pledged", "paid", "confirmed", "refunded"],
+      payment_provider: [
+        "mtn_momo",
+        "airtel_money",
+        "zamtel_kwacha",
+        "bank_transfer",
+        "wallet",
+        "flutterwave",
+      ],
+      wallet_tx_status: ["pending", "completed", "failed", "cancelled"],
+      wallet_tx_type: [
+        "deposit",
+        "withdrawal",
+        "investment",
+        "payout",
+        "refund",
+        "fee",
+      ],
     },
   },
 } as const

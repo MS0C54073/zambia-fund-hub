@@ -7,13 +7,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useRealtimeCampaigns } from "@/hooks/useRealtimeCampaigns";
+import { useWallet } from "@/hooks/useWallet";
+import { useSavedBusinesses } from "@/hooks/useSavedBusinesses";
 import RealtimeProgressBar from "@/components/RealtimeProgressBar";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import WalletCard from "@/components/wallet/WalletCard";
+import DepositDialog from "@/components/wallet/DepositDialog";
+import WithdrawDialog from "@/components/wallet/WithdrawDialog";
+import TransactionList from "@/components/wallet/TransactionList";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard, Briefcase, TrendingUp, User, Plus,
-  Upload, MapPin, Clock, CheckCircle
+  Upload, MapPin, Clock, CheckCircle, Wallet as WalletIcon, Bookmark
 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -23,8 +29,10 @@ type Investment = Tables<"investments">;
 
 const navItems = [
   { icon: LayoutDashboard, label: "Overview", tab: "overview" },
+  { icon: WalletIcon, label: "Wallet", tab: "wallet" },
   { icon: Briefcase, label: "My Businesses", tab: "businesses" },
   { icon: TrendingUp, label: "Investments", tab: "investments" },
+  { icon: Bookmark, label: "Saved", tab: "saved" },
   { icon: User, label: "Profile", tab: "profile" },
 ];
 
@@ -35,6 +43,13 @@ const Dashboard = () => {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [investments, setInvestments] = useState<(Investment & { campaign?: Campaign; business?: Business })[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
+  const [savedBusinesses, setSavedBusinesses] = useState<Business[]>([]);
+
+  // Wallet
+  const { wallet, transactions, loading: walletLoading, deposit, withdraw } = useWallet(user?.id);
+  const { toggleSave } = useSavedBusinesses(user?.id);
+  const [depositOpen, setDepositOpen] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
 
   // Business form state
   const [showBizForm, setShowBizForm] = useState(false);
@@ -96,9 +111,10 @@ const Dashboard = () => {
 
   const fetchData = async () => {
     if (!user) return;
-    const [bizRes, invRes] = await Promise.all([
+    const [bizRes, invRes, savedRes] = await Promise.all([
       supabase.from("businesses").select("*").eq("owner_id", user.id),
       supabase.from("investments").select("*, campaigns(*, businesses(*))").eq("investor_id", user.id),
+      supabase.from("saved_businesses").select("business_id, businesses(*)").eq("user_id", user.id),
     ]);
     const biz = (bizRes.data ?? []) as Business[];
     setBusinesses(biz);
@@ -112,6 +128,12 @@ const Dashboard = () => {
       setCampaigns(camps);
       seedAmounts(camps);
     }
+
+    setSavedBusinesses(
+      ((savedRes.data ?? []) as any[])
+        .map((r) => r.businesses)
+        .filter(Boolean) as Business[]
+    );
 
     const rawInv = (invRes.data ?? []) as any[];
     setInvestments(
@@ -247,9 +269,24 @@ const Dashboard = () => {
 
   const totalInvested = investments.reduce((s, i) => s + Number(i.amount), 0);
   const totalRaised = campaigns.reduce((s, c) => s + Number(c.raised_amount), 0);
+  const activeInvestments = investments.filter((i) => {
+    const status = (i.campaign as any)?.status;
+    return status === "active" || status === "pending_review";
+  }).length;
+  const completedInvestments = investments.length - activeInvestments;
+  // Simple ROI placeholder: portfolio value = total invested (until payouts/returns are tracked)
+  const portfolioValue = totalInvested;
+  const walletBalance = Number(wallet?.balance ?? 0);
 
   return (
     <DashboardLayout navItems={navItems} activeTab={activeTab} onTabChange={setActiveTab} onSignOut={signOut}>
+      <DepositDialog open={depositOpen} onOpenChange={setDepositOpen} onDeposit={deposit} />
+      <WithdrawDialog
+        open={withdrawOpen}
+        onOpenChange={setWithdrawOpen}
+        availableBalance={walletBalance}
+        onWithdraw={withdraw}
+      />
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <div className="mb-8">
           <h1 className="text-2xl font-display font-bold text-foreground">
@@ -259,27 +296,41 @@ const Dashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
+          <TabsList className="mb-6 flex-wrap h-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="wallet">Wallet</TabsTrigger>
             <TabsTrigger value="businesses">My Businesses</TabsTrigger>
             <TabsTrigger value="investments">Investments</TabsTrigger>
+            <TabsTrigger value="saved">Saved</TabsTrigger>
             <TabsTrigger value="profile">Profile</TabsTrigger>
           </TabsList>
 
           {/* OVERVIEW */}
           <TabsContent value="overview">
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-              {[
-                { label: "Total Invested", value: `K${totalInvested.toLocaleString()}` },
-                { label: "Businesses", value: businesses.length.toString() },
-                { label: "Active Campaigns", value: campaigns.filter((c) => c.status === "active").length.toString() },
-                { label: "Total Raised", value: `K${totalRaised.toLocaleString()}` },
-              ].map((stat) => (
-                <div key={stat.label} className="bg-card rounded-xl border border-border/50 p-5">
-                  <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
-                  <p className="text-2xl font-display font-bold text-foreground">{stat.value}</p>
-                </div>
-              ))}
+            <div className="grid lg:grid-cols-3 gap-6 mb-8">
+              <div className="lg:col-span-1">
+                <WalletCard
+                  wallet={wallet}
+                  loading={walletLoading}
+                  onDeposit={() => setDepositOpen(true)}
+                  onWithdraw={() => setWithdrawOpen(true)}
+                />
+              </div>
+
+              <div className="lg:col-span-2 grid sm:grid-cols-2 gap-4">
+                {[
+                  { label: "Portfolio Value", value: `K${portfolioValue.toLocaleString()}`, hint: "Total invested capital" },
+                  { label: "Active Investments", value: activeInvestments.toString(), hint: `${completedInvestments} completed` },
+                  { label: "Businesses Owned", value: businesses.length.toString(), hint: `${campaigns.filter((c) => c.status === "active").length} active campaigns` },
+                  { label: "Total Raised", value: `K${totalRaised.toLocaleString()}`, hint: "Across your campaigns" },
+                ].map((stat) => (
+                  <div key={stat.label} className="bg-card rounded-xl border border-border/50 p-5">
+                    <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
+                    <p className="text-2xl font-display font-bold text-foreground">{stat.value}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{stat.hint}</p>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="bg-card rounded-2xl border border-border/50 p-12 text-center">
@@ -292,13 +343,36 @@ const Dashboard = () => {
               <p className="text-muted-foreground text-sm mb-6 max-w-md mx-auto">
                 Browse investment opportunities or list your business to start raising capital.
               </p>
-              <div className="flex items-center justify-center gap-4">
+              <div className="flex items-center justify-center gap-4 flex-wrap">
                 <Button variant="hero" asChild>
                   <Link to="/browse">Browse Businesses</Link>
                 </Button>
                 <Button variant="hero-outline" onClick={() => { setActiveTab("businesses"); setShowBizForm(true); }}>
                   List Your Business
                 </Button>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* WALLET */}
+          <TabsContent value="wallet">
+            <div className="grid lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1 space-y-4">
+                <WalletCard
+                  wallet={wallet}
+                  loading={walletLoading}
+                  onDeposit={() => setDepositOpen(true)}
+                  onWithdraw={() => setWithdrawOpen(true)}
+                />
+                <div className="bg-card rounded-xl border border-border/50 p-5 text-xs text-muted-foreground">
+                  <p className="font-medium text-foreground mb-2">About your wallet</p>
+                  <p>Top up using MTN, Airtel, or Zamtel mobile money or bank transfer. Funds invested are deducted instantly. Returns and payouts will appear here automatically.</p>
+                  <p className="mt-2 text-yellow-400">Demo mode: payments are simulated.</p>
+                </div>
+              </div>
+              <div className="lg:col-span-2">
+                <h3 className="text-sm font-medium text-foreground mb-3">Recent Transactions</h3>
+                <TransactionList transactions={transactions} emptyText="No wallet activity yet. Make a deposit to get started." />
               </div>
             </div>
           </TabsContent>
@@ -550,6 +624,48 @@ const Dashboard = () => {
                       <p className="font-display font-bold text-foreground">K{Number(inv.amount).toLocaleString()}</p>
                       <p className="text-xs text-muted-foreground">{inv.currency}</p>
                     </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* SAVED */}
+          <TabsContent value="saved">
+            <h2 className="text-xl font-display font-semibold text-foreground mb-6">Saved Businesses</h2>
+            {savedBusinesses.length === 0 ? (
+              <div className="bg-card rounded-xl border border-border/50 p-12 text-center">
+                <Bookmark size={32} className="text-primary mx-auto mb-3" />
+                <p className="text-muted-foreground mb-4">No saved businesses yet.</p>
+                <Button variant="hero" asChild>
+                  <Link to="/browse">Browse Opportunities</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-4">
+                {savedBusinesses.map((biz) => (
+                  <div key={biz.id} className="bg-card rounded-xl border border-border/50 p-5">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-display font-semibold text-foreground">{biz.name}</h3>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={async () => {
+                          await toggleSave(biz.id);
+                          setSavedBusinesses((prev) => prev.filter((b) => b.id !== biz.id));
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                    {biz.description && <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{biz.description}</p>}
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
+                      {biz.industry && <span>{biz.industry}</span>}
+                      {biz.province && <span className="flex items-center gap-1"><MapPin size={12} />{biz.province}</span>}
+                    </div>
+                    <Button size="sm" variant="hero-outline" className="w-full" asChild>
+                      <Link to={`/business/${biz.id}`}>View Details</Link>
+                    </Button>
                   </div>
                 ))}
               </div>
