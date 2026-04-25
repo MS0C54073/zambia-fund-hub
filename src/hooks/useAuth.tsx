@@ -34,7 +34,7 @@ export function useAuth(redirectIfUnauthenticated = true) {
   useEffect(() => {
     // 1. Set up auth listener FIRST (per Supabase docs)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         const u = session?.user ?? null;
         setUser(u);
 
@@ -48,7 +48,12 @@ export function useAuth(redirectIfUnauthenticated = true) {
         } else {
           setProfile(null);
           setLoading(false);
-          if (initialized.current && redirectIfUnauthenticated) {
+          // Only auto-redirect on explicit sign-out events, not initial load
+          if (
+            initialized.current &&
+            redirectIfUnauthenticated &&
+            event === "SIGNED_OUT"
+          ) {
             navigate("/auth");
           }
         }
@@ -75,6 +80,7 @@ export function useAuth(redirectIfUnauthenticated = true) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    toast({ title: "Signed out", description: "You've been logged out." });
     navigate("/");
   };
 
