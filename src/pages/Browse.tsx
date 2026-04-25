@@ -255,6 +255,11 @@ const Browse = () => {
           )}
         </AnimatePresence>
 
+        {/* Discovery Rails — only when not actively filtering/searching */}
+        {!loading && businesses.length > 0 && !search && activeFilterCount === 0 && (
+          <DiscoveryRails businesses={businesses} userProvince={profile?.province ?? null} />
+        )}
+
         {/* Result count */}
         {!loading && sortedFiltered.length > 0 && (
           <p className="text-sm text-muted-foreground mb-4">
@@ -294,6 +299,7 @@ const Browse = () => {
                             </span>
                           )}
                           <VerifiedBadge verified={biz.is_verified} />
+                          {camp?.end_date && <CampaignUrgency endDate={camp.end_date} />}
                         </div>
                         <h3 className="text-lg font-display font-semibold text-foreground mt-2 truncate">{biz.name}</h3>
                       </div>
