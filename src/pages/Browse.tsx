@@ -41,6 +41,7 @@ const SORT_OPTIONS = [
 const PAGE_SIZE = 9;
 
 const Browse = () => {
+  const { profile } = useAuth(false);
   const [search, setSearch] = useState("");
   const [businesses, setBusinesses] = useState<BizWithCampaign[]>([]);
   const [loading, setLoading] = useState(true);
