@@ -12,6 +12,7 @@ import { useSavedBusinesses } from "@/hooks/useSavedBusinesses";
 import { usePortfolio } from "@/hooks/usePortfolio";
 import RealtimeProgressBar from "@/components/RealtimeProgressBar";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import BusinessDocuments from "@/components/dashboard/BusinessDocuments";
 import WalletCard from "@/components/wallet/WalletCard";
 import DepositDialog from "@/components/wallet/DepositDialog";
 import WithdrawDialog from "@/components/wallet/WithdrawDialog";
@@ -452,6 +453,8 @@ const Dashboard = () => {
                         </div>
                       </div>
                       {biz.description && <p className="text-sm text-muted-foreground mt-2">{biz.description}</p>}
+
+                      <BusinessDocuments business={biz} onChange={fetchData} />
 
                       {/* Campaigns for this business */}
                       <div className="mt-4 border-t border-border/30 pt-4">

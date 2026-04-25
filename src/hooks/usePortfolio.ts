@@ -104,6 +104,36 @@ export function usePortfolio(userId: string | undefined) {
     fetchPortfolio();
   }, [fetchPortfolio]);
 
+  // Realtime: when admin issues a payout/refund, the matching wallet_transactions INSERT
+  // arrives here and we just refetch. Cheap and always consistent.
+  useEffect(() => {
+    if (!userId) return;
+    const channel = supabase
+      .channel(`portfolio-${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "wallet_transactions",
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const t = (payload.new as WalletTransaction).type;
+          if (t === "payout" || t === "refund") fetchPortfolio();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "investments", filter: `investor_id=eq.${userId}` },
+        () => fetchPortfolio()
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, fetchPortfolio]);
+
   const summary = summarize(investments);
   const active = investments.filter(
     (i) => i.campaign && ACTIVE_CAMPAIGN_STATUSES.has(i.campaign.status)

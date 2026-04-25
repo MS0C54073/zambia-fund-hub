@@ -8,17 +8,16 @@ import { Search, MapPin, TrendingUp, Filter, X, ArrowUpDown, ChevronLeft, Chevro
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeCampaigns } from "@/hooks/useRealtimeCampaigns";
+import { useAuth } from "@/hooks/useAuth";
 import RealtimeProgressBar from "@/components/RealtimeProgressBar";
 import RiskBadge from "@/components/RiskBadge";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import CampaignUrgency from "@/components/CampaignUrgency";
+import DiscoveryRails, { type BizWithCampaign } from "@/components/browse/DiscoveryRails";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Business = Tables<"businesses">;
 type Campaign = Tables<"campaigns">;
-
-interface BizWithCampaign extends Business {
-  campaign?: Campaign | null;
-}
 
 const PROVINCES = [
   "Central", "Copperbelt", "Eastern", "Luapula", "Lusaka",
@@ -42,6 +41,7 @@ const SORT_OPTIONS = [
 const PAGE_SIZE = 9;
 
 const Browse = () => {
+  const { profile } = useAuth(false);
   const [search, setSearch] = useState("");
   const [businesses, setBusinesses] = useState<BizWithCampaign[]>([]);
   const [loading, setLoading] = useState(true);
@@ -255,6 +255,11 @@ const Browse = () => {
           )}
         </AnimatePresence>
 
+        {/* Discovery Rails — only when not actively filtering/searching */}
+        {!loading && businesses.length > 0 && !search && activeFilterCount === 0 && (
+          <DiscoveryRails businesses={businesses} userProvince={profile?.province ?? null} />
+        )}
+
         {/* Result count */}
         {!loading && sortedFiltered.length > 0 && (
           <p className="text-sm text-muted-foreground mb-4">
@@ -294,6 +299,7 @@ const Browse = () => {
                             </span>
                           )}
                           <VerifiedBadge verified={biz.is_verified} />
+                          {camp?.end_date && <CampaignUrgency endDate={camp.end_date} />}
                         </div>
                         <h3 className="text-lg font-display font-semibold text-foreground mt-2 truncate">{biz.name}</h3>
                       </div>
