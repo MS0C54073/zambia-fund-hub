@@ -480,6 +480,15 @@ export type Database = {
         Args: { _amount: number; _campaign_id: string }
         Returns: string
       }
+      wallet_payout: {
+        Args: {
+          _amount: number
+          _description?: string
+          _investment_id: string
+          _kind?: string
+        }
+        Returns: string
+      }
       wallet_withdraw: {
         Args: {
           _amount: number
