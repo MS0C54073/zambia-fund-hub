@@ -9,10 +9,12 @@ import { toast } from "sonner";
 import { useRealtimeCampaigns } from "@/hooks/useRealtimeCampaigns";
 import RealtimeProgressBar from "@/components/RealtimeProgressBar";
 import { motion } from "framer-motion";
-import { MapPin, TrendingUp, ArrowLeft, Wallet as WalletIcon, Bookmark, BookmarkCheck, ShieldCheck } from "lucide-react";
+import { MapPin, TrendingUp, ArrowLeft, Wallet as WalletIcon, Bookmark, BookmarkCheck, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useWallet } from "@/hooks/useWallet";
 import { useSavedBusinesses } from "@/hooks/useSavedBusinesses";
+import VerifiedBadge from "@/components/VerifiedBadge";
+import RiskBadge from "@/components/RiskBadge";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Business = Tables<"businesses">;
@@ -145,15 +147,12 @@ const BusinessDetail = () => {
           <div className="bg-card rounded-2xl border border-border/50 p-8">
             <div className="flex items-start justify-between mb-4 gap-4">
               <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-3xl font-display font-bold text-foreground">{business.name}</h1>
-                  {business.is_verified && (
-                    <span className="inline-flex items-center gap-1 text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full">
-                      <ShieldCheck size={12} /> Verified
-                    </span>
-                  )}
+                <h1 className="text-3xl font-display font-bold text-foreground">{business.name}</h1>
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <VerifiedBadge verified={business.is_verified} showUnverified />
+                  <RiskBadge business={business} campaign={campaign} size="md" />
                 </div>
-                <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground flex-wrap">
+                <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground flex-wrap">
                   {business.industry && <span className="flex items-center gap-1"><TrendingUp size={14} />{business.industry}</span>}
                   {business.province && <span className="flex items-center gap-1"><MapPin size={14} />{business.province}</span>}
                 </div>
@@ -163,6 +162,15 @@ const BusinessDetail = () => {
                 {saved ? "Saved" : "Save"}
               </Button>
             </div>
+
+            {!business.is_verified && (
+              <div className="flex items-start gap-3 mb-6 p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/5 text-yellow-400 text-sm">
+                <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+                <p>
+                  This business has not yet completed ZamFund verification. Review documents carefully before investing.
+                </p>
+              </div>
+            )}
 
             {business.description && (
               <p className="text-muted-foreground mb-6">{business.description}</p>
