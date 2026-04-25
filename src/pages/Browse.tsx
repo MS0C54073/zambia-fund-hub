@@ -8,9 +8,12 @@ import { Search, MapPin, TrendingUp, Filter, X, ArrowUpDown, ChevronLeft, Chevro
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeCampaigns } from "@/hooks/useRealtimeCampaigns";
+import { useAuth } from "@/hooks/useAuth";
 import RealtimeProgressBar from "@/components/RealtimeProgressBar";
 import RiskBadge from "@/components/RiskBadge";
 import VerifiedBadge from "@/components/VerifiedBadge";
+import CampaignUrgency from "@/components/CampaignUrgency";
+import DiscoveryRails, { type BizWithCampaign } from "@/components/browse/DiscoveryRails";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Business = Tables<"businesses">;
