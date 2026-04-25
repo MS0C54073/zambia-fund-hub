@@ -9,6 +9,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeCampaigns } from "@/hooks/useRealtimeCampaigns";
 import RealtimeProgressBar from "@/components/RealtimeProgressBar";
+import RiskBadge from "@/components/RiskBadge";
+import VerifiedBadge from "@/components/VerifiedBadge";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Business = Tables<"businesses">;
@@ -283,15 +285,19 @@ const Browse = () => {
                     transition={{ delay: i * 0.05 }}
                     className="bg-card rounded-2xl border border-border/50 p-6 hover:border-primary/30 transition-all group"
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        {camp && (
-                          <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full capitalize">
-                            {camp.funding_type.replace("_", " ")}
-                          </span>
-                        )}
-                        <h3 className="text-lg font-display font-semibold text-foreground mt-2">{biz.name}</h3>
+                    <div className="flex items-start justify-between mb-3 gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {camp && (
+                            <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full capitalize">
+                              {camp.funding_type.replace("_", " ")}
+                            </span>
+                          )}
+                          <VerifiedBadge verified={biz.is_verified} />
+                        </div>
+                        <h3 className="text-lg font-display font-semibold text-foreground mt-2 truncate">{biz.name}</h3>
                       </div>
+                      <RiskBadge business={biz} campaign={camp} />
                     </div>
 
                     <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{biz.description}</p>
