@@ -19,10 +19,6 @@ import type { Tables } from "@/integrations/supabase/types";
 type Business = Tables<"businesses">;
 type Campaign = Tables<"campaigns">;
 
-interface BizWithCampaign extends Business {
-  campaign?: Campaign | null;
-}
-
 const PROVINCES = [
   "Central", "Copperbelt", "Eastern", "Luapula", "Lusaka",
   "Muchinga", "Northern", "North-Western", "Southern", "Western",
