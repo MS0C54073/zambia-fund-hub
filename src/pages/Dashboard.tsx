@@ -48,16 +48,19 @@ const navItems = [
 const Dashboard = () => {
   const { user, profile, loading, signOut } = useAuth();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  
-  const [activeTab, setActiveTab] = useState("overview");
+
+  const initialTab = searchParams.get("tab") || "overview";
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [savedBusinesses, setSavedBusinesses] = useState<Business[]>([]);
 
-  // Wallet & portfolio
+  // Wallet, portfolio, KYC
   const { wallet, transactions, loading: walletLoading, deposit, withdraw } = useWallet(user?.id);
   const { toggleSave } = useSavedBusinesses(user?.id);
   const portfolio = usePortfolio(user?.id);
+  const kyc = useKyc(user?.id);
   const [depositOpen, setDepositOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
 
