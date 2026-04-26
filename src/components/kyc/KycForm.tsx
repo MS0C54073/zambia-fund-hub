@@ -19,7 +19,7 @@ interface Props {
 const nrcSchema = z
   .string()
   .trim()
-  .regex(/^\d{6}[\/\-\s]?\d{2}[\/\-\s]?\d{1}$/, "Format: 123456/78/1");
+  .regex(/^\d{6}[/\-\s]?\d{2}[/\-\s]?\d$/, "Format: 123456/78/1");
 
 const formSchema = z.object({
   full_name: z.string().trim().min(2, "Full name is required").max(120),
