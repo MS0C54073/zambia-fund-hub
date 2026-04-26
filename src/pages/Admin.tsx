@@ -5,13 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { motion } from "framer-motion";
-import { Shield, Briefcase, TrendingUp, Users, CreditCard } from "lucide-react";
+import { Shield, Briefcase, TrendingUp, Users, CreditCard, ShieldCheck } from "lucide-react";
 import type { Tables, Database } from "@/integrations/supabase/types";
 import AdminUsersTab from "@/components/admin/AdminUsersTab";
 import AdminBusinessesTab from "@/components/admin/AdminBusinessesTab";
 import AdminCampaignsTab from "@/components/admin/AdminCampaignsTab";
 import AdminInvestmentsTab from "@/components/admin/AdminInvestmentsTab";
 import AdminTransactionsTab from "@/components/admin/AdminTransactionsTab";
+import AdminKycTab from "@/components/admin/AdminKycTab";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -126,6 +127,7 @@ const Admin = () => {
           <TabsList className="mb-6 flex-wrap">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="kyc">KYC</TabsTrigger>
             <TabsTrigger value="businesses">Businesses</TabsTrigger>
             <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
             <TabsTrigger value="investments">Investments</TabsTrigger>
@@ -153,6 +155,10 @@ const Admin = () => {
 
           <TabsContent value="users">
             <AdminUsersTab users={users} onRefresh={fetchAll} />
+          </TabsContent>
+
+          <TabsContent value="kyc">
+            <AdminKycTab />
           </TabsContent>
 
           <TabsContent value="businesses">
