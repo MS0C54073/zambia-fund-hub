@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { useRealtimeCampaigns } from "@/hooks/useRealtimeCampaigns";
 import { useWallet } from "@/hooks/useWallet";
 import { useSavedBusinesses } from "@/hooks/useSavedBusinesses";
 import { usePortfolio } from "@/hooks/usePortfolio";
+import { useKyc } from "@/hooks/useKyc";
 import RealtimeProgressBar from "@/components/RealtimeProgressBar";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import BusinessDocuments from "@/components/dashboard/BusinessDocuments";
@@ -19,11 +20,14 @@ import WithdrawDialog from "@/components/wallet/WithdrawDialog";
 import TransactionList from "@/components/wallet/TransactionList";
 import PortfolioSummary from "@/components/portfolio/PortfolioSummary";
 import InvestmentList from "@/components/portfolio/InvestmentList";
+import KycForm from "@/components/kyc/KycForm";
+import BusinessKycForm from "@/components/kyc/BusinessKycForm";
+import KycRequiredBanner from "@/components/kyc/KycRequiredBanner";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard, Briefcase, TrendingUp, User, Plus,
-  Upload, MapPin, Clock, CheckCircle, Wallet as WalletIcon, Bookmark
+  Upload, MapPin, Clock, CheckCircle, Wallet as WalletIcon, Bookmark, ShieldCheck
 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -34,6 +38,7 @@ type Campaign = Tables<"campaigns">;
 const navItems = [
   { icon: LayoutDashboard, label: "Overview", tab: "overview" },
   { icon: WalletIcon, label: "Wallet", tab: "wallet" },
+  { icon: ShieldCheck, label: "Verification", tab: "verification" },
   { icon: Briefcase, label: "My Businesses", tab: "businesses" },
   { icon: TrendingUp, label: "Investments", tab: "investments" },
   { icon: Bookmark, label: "Saved", tab: "saved" },
@@ -43,16 +48,19 @@ const navItems = [
 const Dashboard = () => {
   const { user, profile, loading, signOut } = useAuth();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  
-  const [activeTab, setActiveTab] = useState("overview");
+
+  const initialTab = searchParams.get("tab") || "overview";
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [savedBusinesses, setSavedBusinesses] = useState<Business[]>([]);
 
-  // Wallet & portfolio
+  // Wallet, portfolio, KYC
   const { wallet, transactions, loading: walletLoading, deposit, withdraw } = useWallet(user?.id);
   const { toggleSave } = useSavedBusinesses(user?.id);
   const portfolio = usePortfolio(user?.id);
+  const kyc = useKyc(user?.id);
   const [depositOpen, setDepositOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
 
@@ -282,10 +290,19 @@ const Dashboard = () => {
           <p className="text-muted-foreground text-sm">{user?.email}</p>
         </div>
 
+        {!kyc.loading && !kyc.isApproved && (
+          <div className="mb-6">
+            <KycRequiredBanner status={kyc.status} to="#" />
+          </div>
+        )}
+
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6 flex-wrap h-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="wallet">Wallet</TabsTrigger>
+            <TabsTrigger value="verification">
+              Verification {!kyc.isApproved && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block" />}
+            </TabsTrigger>
             <TabsTrigger value="businesses">My Businesses</TabsTrigger>
             <TabsTrigger value="investments">Investments</TabsTrigger>
             <TabsTrigger value="saved">Saved</TabsTrigger>
@@ -368,7 +385,41 @@ const Dashboard = () => {
             </div>
           </TabsContent>
 
-          {/* BUSINESSES */}
+          {/* VERIFICATION */}
+          <TabsContent value="verification">
+            <div className="space-y-5">
+              {user && (
+                <KycForm
+                  userId={user.id}
+                  existing={kyc.individual}
+                  onSaved={kyc.refresh}
+                />
+              )}
+
+              {businesses.length > 0 && (
+                <div className="space-y-3">
+                  <div>
+                    <h3 className="text-sm font-medium text-foreground">Business Verification</h3>
+                    <p className="text-xs text-muted-foreground">PACRA + ZRA TPIN required to launch active campaigns.</p>
+                  </div>
+                  {businesses.map((biz) => (
+                    user && (
+                      <BusinessKycForm
+                        key={biz.id}
+                        userId={user.id}
+                        businessId={biz.id}
+                        businessName={biz.name}
+                        existing={kyc.businessKycs.find((k) => k.business_id === biz.id) ?? null}
+                        onSaved={kyc.refresh}
+                      />
+                    )
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+
           <TabsContent value="businesses">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-display font-semibold text-foreground">My Businesses</h2>

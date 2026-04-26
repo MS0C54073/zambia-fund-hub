@@ -13,8 +13,10 @@ import { MapPin, TrendingUp, ArrowLeft, Wallet as WalletIcon, Bookmark, Bookmark
 import { useAuth } from "@/hooks/useAuth";
 import { useWallet } from "@/hooks/useWallet";
 import { useSavedBusinesses } from "@/hooks/useSavedBusinesses";
+import { useKyc } from "@/hooks/useKyc";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import RiskBadge from "@/components/RiskBadge";
+import KycRequiredBanner from "@/components/kyc/KycRequiredBanner";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Business = Tables<"businesses">;
@@ -32,6 +34,7 @@ const BusinessDetail = () => {
 
   const { wallet, invest } = useWallet(user?.id);
   const { isSaved, toggleSave } = useSavedBusinesses(user?.id);
+  const kyc = useKyc(user?.id);
 
   const handleCampaignUpdate = useCallback((updated: Campaign) => {
     setCampaign((prev) => (prev?.id === updated.id ? updated : prev));
@@ -71,6 +74,17 @@ const BusinessDetail = () => {
       return;
     }
     if (!campaign) return;
+
+    if (!kyc.canInvest) {
+      toast.error("Identity verification required", {
+        description:
+          kyc.status === "pending"
+            ? "Your KYC submission is under review."
+            : "Submit your NRC details before investing.",
+        action: { label: "Verify now", onClick: () => navigate("/dashboard?tab=verification") },
+      });
+      return;
+    }
 
     const amount = parseFloat(investAmount);
     if (isNaN(amount) || amount <= 0) {
@@ -197,6 +211,11 @@ const BusinessDetail = () => {
                   className="mb-6"
                 />
 
+                {user && !kyc.loading && !kyc.canInvest && (
+                  <div className="mb-4">
+                    <KycRequiredBanner status={kyc.status} compact />
+                  </div>
+                )}
                 <form onSubmit={handleInvest} className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label className="text-foreground">Invest from your wallet</Label>
@@ -218,13 +237,14 @@ const BusinessDetail = () => {
                         onChange={(e) => setInvestAmount(e.target.value)}
                         className="pl-7 bg-background border-border"
                         required
+                        disabled={!!user && !kyc.canInvest}
                       />
                     </div>
-                    <Button type="submit" variant="hero" disabled={investing}>
-                      {investing ? "Processing..." : "Invest Now"}
+                    <Button type="submit" variant="hero" disabled={investing || (!!user && !kyc.canInvest)}>
+                      {investing ? "Processing..." : !!user && !kyc.canInvest ? "Verify to invest" : "Invest Now"}
                     </Button>
                   </div>
-                  {user && balance === 0 && (
+                  {user && kyc.canInvest && balance === 0 && (
                     <p className="text-xs text-yellow-400">
                       Your wallet is empty.{" "}
                       <Link to="/dashboard" className="underline">Top up your wallet</Link> to invest.
