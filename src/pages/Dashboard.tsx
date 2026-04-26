@@ -48,7 +48,7 @@ const navItems = [
 const Dashboard = () => {
   const { user, profile, loading, signOut } = useAuth();
   const { toast } = useToast();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
 
