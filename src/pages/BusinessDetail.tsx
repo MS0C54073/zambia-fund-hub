@@ -13,8 +13,10 @@ import { MapPin, TrendingUp, ArrowLeft, Wallet as WalletIcon, Bookmark, Bookmark
 import { useAuth } from "@/hooks/useAuth";
 import { useWallet } from "@/hooks/useWallet";
 import { useSavedBusinesses } from "@/hooks/useSavedBusinesses";
+import { useKyc } from "@/hooks/useKyc";
 import VerifiedBadge from "@/components/VerifiedBadge";
 import RiskBadge from "@/components/RiskBadge";
+import KycRequiredBanner from "@/components/kyc/KycRequiredBanner";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Business = Tables<"businesses">;
@@ -32,6 +34,7 @@ const BusinessDetail = () => {
 
   const { wallet, invest } = useWallet(user?.id);
   const { isSaved, toggleSave } = useSavedBusinesses(user?.id);
+  const kyc = useKyc(user?.id);
 
   const handleCampaignUpdate = useCallback((updated: Campaign) => {
     setCampaign((prev) => (prev?.id === updated.id ? updated : prev));
@@ -71,6 +74,17 @@ const BusinessDetail = () => {
       return;
     }
     if (!campaign) return;
+
+    if (!kyc.canInvest) {
+      toast.error("Identity verification required", {
+        description:
+          kyc.status === "pending"
+            ? "Your KYC submission is under review."
+            : "Submit your NRC details before investing.",
+        action: { label: "Verify now", onClick: () => navigate("/dashboard?tab=verification") },
+      });
+      return;
+    }
 
     const amount = parseFloat(investAmount);
     if (isNaN(amount) || amount <= 0) {
