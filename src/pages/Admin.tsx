@@ -157,6 +157,10 @@ const Admin = () => {
             <AdminUsersTab users={users} onRefresh={fetchAll} />
           </TabsContent>
 
+          <TabsContent value="kyc">
+            <AdminKycTab />
+          </TabsContent>
+
           <TabsContent value="businesses">
             <AdminBusinessesTab businesses={businesses} onRefresh={fetchAll} />
           </TabsContent>
