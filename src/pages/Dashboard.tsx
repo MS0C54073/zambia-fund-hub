@@ -385,7 +385,41 @@ const Dashboard = () => {
             </div>
           </TabsContent>
 
-          {/* BUSINESSES */}
+          {/* VERIFICATION */}
+          <TabsContent value="verification">
+            <div className="space-y-5">
+              {user && (
+                <KycForm
+                  userId={user.id}
+                  existing={kyc.individual}
+                  onSaved={kyc.refresh}
+                />
+              )}
+
+              {businesses.length > 0 && (
+                <div className="space-y-3">
+                  <div>
+                    <h3 className="text-sm font-medium text-foreground">Business Verification</h3>
+                    <p className="text-xs text-muted-foreground">PACRA + ZRA TPIN required to launch active campaigns.</p>
+                  </div>
+                  {businesses.map((biz) => (
+                    user && (
+                      <BusinessKycForm
+                        key={biz.id}
+                        userId={user.id}
+                        businessId={biz.id}
+                        businessName={biz.name}
+                        existing={kyc.businessKycs.find((k) => k.business_id === biz.id) ?? null}
+                        onSaved={kyc.refresh}
+                      />
+                    )
+                  ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+
           <TabsContent value="businesses">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-display font-semibold text-foreground">My Businesses</h2>
