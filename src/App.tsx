@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import BusinessDetail from "./pages/BusinessDetail";
 import Admin from "./pages/Admin";
 import ResetPassword from "./pages/ResetPassword";
+import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/help" element={<Help />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
