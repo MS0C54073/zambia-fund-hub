@@ -290,10 +290,19 @@ const Dashboard = () => {
           <p className="text-muted-foreground text-sm">{user?.email}</p>
         </div>
 
+        {!kyc.loading && !kyc.isApproved && (
+          <div className="mb-6">
+            <KycRequiredBanner status={kyc.status} to="#" />
+          </div>
+        )}
+
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6 flex-wrap h-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="wallet">Wallet</TabsTrigger>
+            <TabsTrigger value="verification">
+              Verification {!kyc.isApproved && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block" />}
+            </TabsTrigger>
             <TabsTrigger value="businesses">My Businesses</TabsTrigger>
             <TabsTrigger value="investments">Investments</TabsTrigger>
             <TabsTrigger value="saved">Saved</TabsTrigger>
