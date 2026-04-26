@@ -211,6 +211,11 @@ const BusinessDetail = () => {
                   className="mb-6"
                 />
 
+                {user && !kyc.loading && !kyc.canInvest && (
+                  <div className="mb-4">
+                    <KycRequiredBanner status={kyc.status} compact />
+                  </div>
+                )}
                 <form onSubmit={handleInvest} className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label className="text-foreground">Invest from your wallet</Label>
@@ -232,13 +237,14 @@ const BusinessDetail = () => {
                         onChange={(e) => setInvestAmount(e.target.value)}
                         className="pl-7 bg-background border-border"
                         required
+                        disabled={!!user && !kyc.canInvest}
                       />
                     </div>
-                    <Button type="submit" variant="hero" disabled={investing}>
-                      {investing ? "Processing..." : "Invest Now"}
+                    <Button type="submit" variant="hero" disabled={investing || (!!user && !kyc.canInvest)}>
+                      {investing ? "Processing..." : !!user && !kyc.canInvest ? "Verify to invest" : "Invest Now"}
                     </Button>
                   </div>
-                  {user && balance === 0 && (
+                  {user && kyc.canInvest && balance === 0 && (
                     <p className="text-xs text-yellow-400">
                       Your wallet is empty.{" "}
                       <Link to="/dashboard" className="underline">Top up your wallet</Link> to invest.
