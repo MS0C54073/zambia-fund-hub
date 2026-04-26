@@ -207,6 +207,80 @@ export type Database = {
           },
         ]
       }
+      kyc_submissions: {
+        Row: {
+          business_id: string | null
+          created_at: string
+          date_of_birth: string | null
+          full_name: string | null
+          id: string
+          kind: Database["public"]["Enums"]["kyc_kind"]
+          legal_name: string | null
+          nrc_doc_url: string | null
+          nrc_number: string | null
+          pacra_doc_url: string | null
+          pacra_number: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewer_id: string | null
+          selfie_url: string | null
+          status: Database["public"]["Enums"]["kyc_status"]
+          tpin: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          full_name?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["kyc_kind"]
+          legal_name?: string | null
+          nrc_doc_url?: string | null
+          nrc_number?: string | null
+          pacra_doc_url?: string | null
+          pacra_number?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          selfie_url?: string | null
+          status?: Database["public"]["Enums"]["kyc_status"]
+          tpin?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          full_name?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["kyc_kind"]
+          legal_name?: string | null
+          nrc_doc_url?: string | null
+          nrc_number?: string | null
+          pacra_doc_url?: string | null
+          pacra_number?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewer_id?: string | null
+          selfie_url?: string | null
+          status?: Database["public"]["Enums"]["kyc_status"]
+          tpin?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kyc_submissions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -467,6 +541,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_kyc_approved: { Args: { _user_id: string }; Returns: boolean }
       wallet_deposit: {
         Args: {
           _amount: number
@@ -509,6 +584,8 @@ export type Database = {
         | "rejected"
       funding_type: "equity" | "revenue_share" | "crowdfunding" | "loan"
       investment_status: "pledged" | "paid" | "confirmed" | "refunded"
+      kyc_kind: "individual" | "business"
+      kyc_status: "not_submitted" | "pending" | "approved" | "rejected"
       payment_provider:
         | "mtn_momo"
         | "airtel_money"
@@ -662,6 +739,8 @@ export const Constants = {
       ],
       funding_type: ["equity", "revenue_share", "crowdfunding", "loan"],
       investment_status: ["pledged", "paid", "confirmed", "refunded"],
+      kyc_kind: ["individual", "business"],
+      kyc_status: ["not_submitted", "pending", "approved", "rejected"],
       payment_provider: [
         "mtn_momo",
         "airtel_money",
