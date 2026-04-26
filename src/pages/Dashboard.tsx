@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { useRealtimeCampaigns } from "@/hooks/useRealtimeCampaigns";
 import { useWallet } from "@/hooks/useWallet";
 import { useSavedBusinesses } from "@/hooks/useSavedBusinesses";
 import { usePortfolio } from "@/hooks/usePortfolio";
+import { useKyc } from "@/hooks/useKyc";
 import RealtimeProgressBar from "@/components/RealtimeProgressBar";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import BusinessDocuments from "@/components/dashboard/BusinessDocuments";
@@ -19,11 +20,14 @@ import WithdrawDialog from "@/components/wallet/WithdrawDialog";
 import TransactionList from "@/components/wallet/TransactionList";
 import PortfolioSummary from "@/components/portfolio/PortfolioSummary";
 import InvestmentList from "@/components/portfolio/InvestmentList";
+import KycForm from "@/components/kyc/KycForm";
+import BusinessKycForm from "@/components/kyc/BusinessKycForm";
+import KycRequiredBanner from "@/components/kyc/KycRequiredBanner";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard, Briefcase, TrendingUp, User, Plus,
-  Upload, MapPin, Clock, CheckCircle, Wallet as WalletIcon, Bookmark
+  Upload, MapPin, Clock, CheckCircle, Wallet as WalletIcon, Bookmark, ShieldCheck
 } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -34,6 +38,7 @@ type Campaign = Tables<"campaigns">;
 const navItems = [
   { icon: LayoutDashboard, label: "Overview", tab: "overview" },
   { icon: WalletIcon, label: "Wallet", tab: "wallet" },
+  { icon: ShieldCheck, label: "Verification", tab: "verification" },
   { icon: Briefcase, label: "My Businesses", tab: "businesses" },
   { icon: TrendingUp, label: "Investments", tab: "investments" },
   { icon: Bookmark, label: "Saved", tab: "saved" },
