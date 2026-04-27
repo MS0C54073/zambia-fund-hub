@@ -24,6 +24,7 @@ const Admin = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [checking, setChecking] = useState(true);
   const [tab, setTab] = useState("overview");
 
@@ -42,8 +43,10 @@ const Admin = () => {
         .select("role")
         .eq("user_id", user.id)
         .in("role", ["admin", "super_admin"]);
-      if (data && data.length > 0) {
+      const roles = (data ?? []).map((r) => r.role);
+      if (roles.length > 0) {
         setIsAdmin(true);
+        setIsSuperAdmin(roles.includes("super_admin"));
       } else {
         navigate("/dashboard");
       }
