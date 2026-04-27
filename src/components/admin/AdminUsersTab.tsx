@@ -143,17 +143,31 @@ export default function AdminUsersTab({ users, onRefresh, canManageRoles = false
                   )}
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 text-xs"
-                      disabled={assigning === u.user_id}
-                      onClick={() => assignRole(u.user_id, "admin")}
-                      title="Assign admin role"
-                    >
-                      <Shield size={12} className="mr-1" /> Admin
-                    </Button>
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {canManageRoles && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs"
+                          disabled={assigning === u.user_id}
+                          onClick={() => assignRole(u.user_id, "super_admin")}
+                          title="Assign super admin role"
+                        >
+                          <Shield size={12} className="mr-1 text-primary" /> Super
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 text-xs"
+                          disabled={assigning === u.user_id}
+                          onClick={() => assignRole(u.user_id, "admin")}
+                          title="Assign admin role"
+                        >
+                          <Shield size={12} className="mr-1" /> Admin
+                        </Button>
+                      </>
+                    )}
                     <Button
                       size="sm"
                       variant="ghost"
