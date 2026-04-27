@@ -24,9 +24,10 @@ interface UserProfile {
 interface Props {
   users: UserProfile[];
   onRefresh: () => void;
+  canManageRoles?: boolean;
 }
 
-export default function AdminUsersTab({ users, onRefresh }: Props) {
+export default function AdminUsersTab({ users, onRefresh, canManageRoles = false }: Props) {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [assigning, setAssigning] = useState<string | null>(null);
