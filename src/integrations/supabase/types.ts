@@ -541,6 +541,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_kyc_approved: { Args: { _user_id: string }; Returns: boolean }
       wallet_deposit: {
         Args: {
@@ -574,7 +575,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "super_admin"
       campaign_status:
         | "draft"
         | "pending_review"
@@ -728,7 +729,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "super_admin"],
       campaign_status: [
         "draft",
         "pending_review",

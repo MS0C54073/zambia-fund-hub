@@ -233,6 +233,45 @@ const Auth = () => {
               </button>
             </div>
           )}
+
+          {!forgotMode && !isSignUp && (
+            <div className="mt-6 pt-6 border-t border-border/50">
+              <p className="text-xs text-muted-foreground mb-3 text-center">Demo accounts (one click sign-in)</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: "Super Admin", email: "superadmin@zamfund.test", password: "SuperAdmin#2026" },
+                  { label: "Admin", email: "admin@zamfund.test", password: "Admin#2026" },
+                  { label: "Founder", email: "founder@zamfund.test", password: "Founder#2026" },
+                  { label: "Investor", email: "investor@zamfund.test", password: "Investor#2026" },
+                ].map((acc) => (
+                  <Button
+                    key={acc.email}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-xs justify-start"
+                    disabled={loading}
+                    onClick={async () => {
+                      setLoading(true);
+                      const { error } = await supabase.auth.signInWithPassword({
+                        email: acc.email,
+                        password: acc.password,
+                      });
+                      setLoading(false);
+                      if (error) {
+                        toast({ title: "Sign-in failed", description: error.message, variant: "destructive" });
+                      } else {
+                        toast({ title: `Signed in as ${acc.label}` });
+                        navigate(acc.label.includes("Admin") ? "/admin" : "/dashboard");
+                      }
+                    }}
+                  >
+                    {acc.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </motion.div>
     </div>
