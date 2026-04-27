@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { motion } from "framer-motion";
-import { Shield, Briefcase, TrendingUp, Users, CreditCard, ShieldCheck } from "lucide-react";
+import { Shield, Briefcase, TrendingUp, Users, CreditCard } from "lucide-react";
 import type { Tables, Database } from "@/integrations/supabase/types";
 import AdminUsersTab from "@/components/admin/AdminUsersTab";
 import AdminBusinessesTab from "@/components/admin/AdminBusinessesTab";
