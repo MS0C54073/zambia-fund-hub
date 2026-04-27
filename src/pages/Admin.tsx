@@ -37,7 +37,11 @@ const Admin = () => {
   useEffect(() => {
     if (!user) return;
     const checkAdmin = async () => {
-      const { data } = await supabase.from("user_roles").select("role").eq("user_id", user.id).eq("role", "admin");
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .in("role", ["admin", "super_admin"]);
       if (data && data.length > 0) {
         setIsAdmin(true);
       } else {
