@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Shield, Ban, CheckCircle } from "lucide-react";
+import { Search, Shield, Ban, CheckCircle, BadgeCheck } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -24,10 +24,13 @@ interface UserProfile {
 interface Props {
   users: UserProfile[];
   onRefresh: () => void;
+  /** True if the current user is a super_admin (can grant the super_admin role). */
   canManageRoles?: boolean;
+  /** True if the current user is at least an admin (can grant admin/moderator/user roles). */
+  isAdmin?: boolean;
 }
 
-export default function AdminUsersTab({ users, onRefresh, canManageRoles = false }: Props) {
+export default function AdminUsersTab({ users, onRefresh, canManageRoles = false, isAdmin = false }: Props) {
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [assigning, setAssigning] = useState<string | null>(null);
@@ -63,6 +66,19 @@ export default function AdminUsersTab({ users, onRefresh, canManageRoles = false
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: `Role "${role}" removed` });
+      onRefresh();
+    }
+  };
+
+  const toggleVerify = async (userId: string, currentlyVerified: boolean) => {
+    const { error } = await supabase
+      .from("profiles")
+      .update({ is_verified: !currentlyVerified })
+      .eq("user_id", userId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: currentlyVerified ? "Verification removed" : "User verified" });
       onRefresh();
     }
   };
@@ -145,28 +161,39 @@ export default function AdminUsersTab({ users, onRefresh, canManageRoles = false
                 <TableCell>
                   <div className="flex items-center gap-1 flex-wrap">
                     {canManageRoles && (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 text-xs"
-                          disabled={assigning === u.user_id}
-                          onClick={() => assignRole(u.user_id, "super_admin")}
-                          title="Assign super admin role"
-                        >
-                          <Shield size={12} className="mr-1 text-primary" /> Super
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 text-xs"
-                          disabled={assigning === u.user_id}
-                          onClick={() => assignRole(u.user_id, "admin")}
-                          title="Assign admin role"
-                        >
-                          <Shield size={12} className="mr-1" /> Admin
-                        </Button>
-                      </>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs"
+                        disabled={assigning === u.user_id}
+                        onClick={() => assignRole(u.user_id, "super_admin")}
+                        title="Assign super admin role"
+                      >
+                        <Shield size={12} className="mr-1 text-primary" /> Super
+                      </Button>
+                    )}
+                    {isAdmin && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs"
+                        disabled={assigning === u.user_id}
+                        onClick={() => assignRole(u.user_id, "admin")}
+                        title="Assign admin role"
+                      >
+                        <Shield size={12} className="mr-1" /> Admin
+                      </Button>
+                    )}
+                    {isAdmin && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs"
+                        onClick={() => toggleVerify(u.user_id, u.is_verified)}
+                        title={u.is_verified ? "Remove verification" : "Mark as verified"}
+                      >
+                        <BadgeCheck size={12} className="mr-1 text-green-400" /> {u.is_verified ? "Unverify" : "Verify"}
+                      </Button>
                     )}
                     <Button
                       size="sm"
