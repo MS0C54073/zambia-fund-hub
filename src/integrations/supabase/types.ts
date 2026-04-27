@@ -541,6 +541,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_kyc_approved: { Args: { _user_id: string }; Returns: boolean }
       wallet_deposit: {
         Args: {
