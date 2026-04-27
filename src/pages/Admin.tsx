@@ -161,7 +161,7 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="users">
-            <AdminUsersTab users={users} onRefresh={fetchAll} />
+            <AdminUsersTab users={users} onRefresh={fetchAll} canManageRoles={isSuperAdmin} />
           </TabsContent>
 
           <TabsContent value="kyc">
