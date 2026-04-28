@@ -160,6 +160,36 @@ export type Database = {
           },
         ]
       }
+      error_logs: {
+        Row: {
+          category: string
+          context: Json | null
+          created_at: string
+          id: string
+          message: string
+          source: string | null
+          user_id: string | null
+        }
+        Insert: {
+          category: string
+          context?: Json | null
+          created_at?: string
+          id?: string
+          message: string
+          source?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          category?: string
+          context?: Json | null
+          created_at?: string
+          id?: string
+          message?: string
+          source?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       investments: {
         Row: {
           amount: number
@@ -543,6 +573,15 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_kyc_approved: { Args: { _user_id: string }; Returns: boolean }
+      log_error: {
+        Args: {
+          _category: string
+          _context?: Json
+          _message: string
+          _source?: string
+        }
+        Returns: string
+      }
       wallet_deposit: {
         Args: {
           _amount: number
