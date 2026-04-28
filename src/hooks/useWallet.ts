@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { logError } from "@/lib/errorLog";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type Wallet = Tables<"wallets">;
@@ -79,7 +80,10 @@ export function useWallet(userId: string | undefined) {
         _phone: phone ?? null,
         _reference: `SIM-${Date.now()}`,
       });
-      if (error) throw error;
+      if (error) {
+        logError(error, { category: "payment", source: "wallet_deposit", context: { amount, provider } });
+        throw error;
+      }
       return data;
     },
     []
@@ -92,7 +96,10 @@ export function useWallet(userId: string | undefined) {
         _provider: provider,
         _phone: phone ?? null,
       });
-      if (error) throw error;
+      if (error) {
+        logError(error, { category: "payment", source: "wallet_withdraw", context: { amount, provider } });
+        throw error;
+      }
       return data;
     },
     []
@@ -103,7 +110,10 @@ export function useWallet(userId: string | undefined) {
       _campaign_id: campaignId,
       _amount: amount,
     });
-    if (error) throw error;
+    if (error) {
+      logError(error, { category: "transaction", source: "wallet_invest", context: { campaignId, amount } });
+      throw error;
+    }
     return data;
   }, []);
 
