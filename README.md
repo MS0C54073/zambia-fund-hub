@@ -169,7 +169,45 @@ Storage buckets:
 - **Roles are never client-trusted.** The UI reads roles from `user_roles`, but every privileged action is re-checked server-side by RLS or RPC.
 - **KYC gating** is enforced inside `wallet_invest`, so an attacker bypassing the UI still cannot pledge funds without an approved KYC.
 - **Internal helpers** (`is_admin`, `has_role`, `is_kyc_approved`, triggers) have `EXECUTE` revoked from `anon` / `authenticated`; they only run inside RLS / other DB functions.
+- **Wallet RPCs** (`wallet_deposit`, `wallet_withdraw`, `wallet_invest`, `wallet_payout`, `log_error`) are intentionally callable by signed-in users — they are the authoritative entry points and enforce auth, KYC, balance, and admin checks internally. The Supabase linter flags these by design; the warnings are an accepted, documented exception.
+- **Leaked-password protection** (HIBP) is enabled at the auth layer, so users cannot pick passwords known to be compromised.
 - **Auth state** is hydrated via the `useAuth` hook, which subscribes via `onAuthStateChange` _before_ calling `getSession()` and uses `.maybeSingle()` to avoid infinite loops.
+- **Admin error log** (`error_logs` table + `log_error` RPC) captures failed RPCs, RLS denials, render crashes, and payment errors for review under Admin → Errors.
+
+## Performance & caching
+
+The app is a static SPA served behind the Lovable Cloud edge — there is no
+custom server tier to scale. Optimisations are split between the platform
+(which we rely on) and the application (which we control).
+
+**Provided by the Lovable Cloud platform:**
+
+- Global CDN for the static bundle (HTML/JS/CSS/assets) with HTTP caching headers.
+- Postgres connection pooling, automated backups, and PITR for the database.
+- Auto-scaled PostgREST, Auth, Realtime, and Storage tiers — no servers to provision.
+- TLS termination, DDoS protection, and edge routing.
+
+**Implemented in the application:**
+
+- **Route-level code splitting** (`React.lazy` + `Suspense` in `src/App.tsx`) so each page ships as its own chunk and the landing page stays small.
+- **React Query defaults** tuned for this workload: `staleTime: 30s`, `gcTime: 5min`, exponential-backoff retries (skipped for 4xx), `refetchOnWindowFocus: false` (Realtime supplies live updates).
+- **Realtime subscriptions** on `wallets`, `wallet_transactions`, and `campaigns` — the client never polls; mutations flow through subscriptions.
+- **Atomic wallet operations** via `SECURITY DEFINER` RPCs that take row-level locks (`FOR UPDATE`) — no read-modify-write races from the client.
+- **Targeted database indexes** on every hot query path:
+  - `campaigns(status)`, `campaigns(business_id)`, `campaigns(status, created_at DESC)`, partial index on `end_date WHERE status='active'`
+  - `investments(investor_id, created_at DESC)`, `investments(campaign_id)`
+  - `businesses(owner_id)`, partial index on `is_approved WHERE is_approved=true`
+  - `user_roles(user_id)`, `kyc_submissions(user_id)`, `saved_businesses(user_id)`, `transactions(user_id, created_at DESC)`
+  - `wallet_transactions(user_id, created_at DESC)`, `wallet_transactions(wallet_id, created_at DESC)`
+- **Top-level `ErrorBoundary`** (`src/components/ErrorBoundary.tsx`) catches render-time crashes, forwards them to `error_logs`, and shows a recoverable fallback instead of a white screen.
+- **Lazy media** — pitch decks and KYC documents are served via signed Storage URLs only when an authorized user opens them.
+
+### Architectural assumptions
+
+- The frontend is **stateless**: all session state lives in Supabase Auth (JWT in `localStorage`) and all domain state lives in Postgres. Any edge node can serve any user.
+- **No client-side secrets.** The `.env` only carries the publishable anon key plus public URLs; service-role access stays inside `SECURITY DEFINER` functions and edge functions.
+- **Single source of truth** for money flows is the `wallets` row plus the `wallet_transactions` ledger — derived totals (e.g. `campaigns.raised_amount`) are written transactionally inside `wallet_invest` / `wallet_payout`.
+- **Scaling path:** when traffic grows, increase the Lovable Cloud instance under **Backend → Advanced settings**; no application changes are required.
 
 ## Testing
 
@@ -177,13 +215,18 @@ Storage buckets:
 bun run test
 ```
 
-Tests use Vitest with a jsdom environment and Testing Library matchers. New
-tests go under `src/**/*.test.ts(x)` or `src/test/`.
+Tests use Vitest with a jsdom environment and Testing Library matchers. The
+suite under `src/test/smoke.test.ts` exercises sign-in, role assignment, admin
+verification toggles, dashboard data loading, and error-log recording end to
+end against a mocked Supabase client.
 
 ## Deployment
 
 The app is deployed via Lovable. To publish, open the project in Lovable and
-click **Publish**. For self-hosting, any static host works:
+click **Publish**. Frontend changes require an explicit publish; backend
+changes (migrations, edge functions, auth config) deploy immediately.
+
+For self-hosting, any static host works:
 
 ```sh
 bun run build       # outputs to dist/
