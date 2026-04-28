@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Search, Shield, Ban, CheckCircle, BadgeCheck } from "lucide-react";
+import { logError } from "@/lib/errorLog";
 import type { Database } from "@/integrations/supabase/types";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -49,6 +50,7 @@ export default function AdminUsersTab({ users, onRefresh, canManageRoles = false
     );
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+      logError(error, { category: "rpc", source: "admin.assignRole", context: { userId, role } });
     } else {
       toast({ title: `Role "${role}" assigned` });
       onRefresh();
@@ -64,6 +66,7 @@ export default function AdminUsersTab({ users, onRefresh, canManageRoles = false
       .eq("role", role);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+      logError(error, { category: "rpc", source: "admin.removeRole", context: { userId, role } });
     } else {
       toast({ title: `Role "${role}" removed` });
       onRefresh();
@@ -77,6 +80,7 @@ export default function AdminUsersTab({ users, onRefresh, canManageRoles = false
       .eq("user_id", userId);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+      logError(error, { category: "rpc", source: "admin.toggleVerify", context: { userId } });
     } else {
       toast({ title: currentlyVerified ? "Verification removed" : "User verified" });
       onRefresh();
@@ -90,6 +94,7 @@ export default function AdminUsersTab({ users, onRefresh, canManageRoles = false
       .eq("user_id", userId);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
+      logError(error, { category: "rpc", source: "admin.toggleSuspend", context: { userId } });
     } else {
       toast({ title: currentlySuspended ? "User unsuspended" : "User suspended" });
       onRefresh();

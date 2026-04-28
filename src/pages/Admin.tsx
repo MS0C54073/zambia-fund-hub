@@ -13,6 +13,7 @@ import AdminCampaignsTab from "@/components/admin/AdminCampaignsTab";
 import AdminInvestmentsTab from "@/components/admin/AdminInvestmentsTab";
 import AdminTransactionsTab from "@/components/admin/AdminTransactionsTab";
 import AdminKycTab from "@/components/admin/AdminKycTab";
+import AdminErrorLogsTab from "@/components/admin/AdminErrorLogsTab";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
 
@@ -139,6 +140,7 @@ const Admin = () => {
             <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
             <TabsTrigger value="investments">Investments</TabsTrigger>
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
+            <TabsTrigger value="errors">Error Logs</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview">
@@ -182,6 +184,10 @@ const Admin = () => {
 
           <TabsContent value="transactions">
             <AdminTransactionsTab transactions={transactions} />
+          </TabsContent>
+
+          <TabsContent value="errors">
+            <AdminErrorLogsTab />
           </TabsContent>
         </Tabs>
       </motion.div>
