@@ -172,7 +172,11 @@ Storage buckets:
 - **Wallet RPCs** (`wallet_deposit`, `wallet_withdraw`, `wallet_invest`, `wallet_payout`, `log_error`) are intentionally callable by signed-in users — they are the authoritative entry points and enforce auth, KYC, balance, and admin checks internally. The Supabase linter flags these by design; the warnings are an accepted, documented exception.
 - **Leaked-password protection** (HIBP) is enabled at the auth layer, so users cannot pick passwords known to be compromised.
 - **Auth state** is hydrated via the `useAuth` hook, which subscribes via `onAuthStateChange` _before_ calling `getSession()` and uses `.maybeSingle()` to avoid infinite loops.
-- **Admin error log** (`error_logs` table + `log_error` RPC) captures failed RPCs, RLS denials, render crashes, and payment errors for review under Admin → Errors.
+- **Admin error log** (`error_logs` table + `log_error` RPC) captures failed RPCs, RLS denials, render crashes, payment errors, and slow performance events for review under Admin → Errors.
+- **Document access control (storage RLS):**
+  - `business-documents` (pitch deck, registration): only the **business owner**, **platform admins**, and **investors with a confirmed/completed investment** in that business can list or download files. Enforced via the `can_read_business_doc(name)` SECURITY DEFINER helper which validates the path's `business_id`, then checks ownership and `investments.status IN ('confirmed','completed')`. Uploads/edits/deletes remain restricted to the owner.
+  - `kyc-documents` (NRC, selfie, PACRA): only the **document owner** and **platform admins** can read; reads require an authenticated session.
+  - Storage access denials raised by the client (failed signed-URL creation) are recorded into `error_logs` via the `log_storage_denial` RPC under category `rls`, source `storage`.
 
 ## Performance & caching
 
