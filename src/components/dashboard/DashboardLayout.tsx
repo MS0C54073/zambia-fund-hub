@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { LogOut, type LucideIcon } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface NavItem {
   icon: LucideIcon;
@@ -43,16 +44,24 @@ export default function DashboardLayout({ children, navItems, activeTab, onTabCh
           ))}
         </nav>
 
-        <button
-          onClick={onSignOut}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-destructive transition-colors"
-        >
-          <LogOut size={18} />
-          Sign Out
-        </button>
+        <div className="flex items-center justify-between gap-2 mt-2">
+          <button
+            onClick={onSignOut}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-muted-foreground hover:text-destructive transition-colors flex-1"
+          >
+            <LogOut size={18} />
+            Sign Out
+          </button>
+          <ThemeToggle />
+        </div>
       </aside>
 
-      <main className="flex-1 p-6 md:p-10 overflow-auto">{children}</main>
+      <main className="flex-1 p-6 md:p-10 overflow-auto">
+        <div className="md:hidden flex justify-end mb-4">
+          <ThemeToggle />
+        </div>
+        {children}
+      </main>
     </div>
   );
 }
