@@ -160,31 +160,65 @@
 
 @layer utilities {
   .text-gradient-gold {
-    background: linear-gradient(135deg, hsl(40 55% 55%), hsl(25 80% 50%));
+    background: var(--gradient-gold);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .bg-gradient-gold {
-    background: linear-gradient(135deg, hsl(40 55% 55%), hsl(25 80% 50%));
+    background: var(--gradient-gold);
   }
 
   .bg-gradient-card {
-    background: linear-gradient(135deg, hsl(240 12% 10%), hsl(240 12% 8%));
+    background: var(--gradient-card);
   }
 
   .border-gold-subtle {
-    border-color: hsl(40 55% 55% / 0.15);
+    border-color: hsl(var(--gold) / 0.18);
   }
 
   .glow-gold {
-    box-shadow: 0 0 40px -10px hsl(40 55% 55% / 0.3);
+    box-shadow: var(--shadow-gold);
   }
 
+  /* Theme-aware glass surface */
   .glass {
-    background: hsl(240 12% 8% / 0.8);
+    background: hsl(var(--card) / 0.78);
     backdrop-filter: blur(12px);
-    border: 1px solid hsl(240 10% 16% / 0.5);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border) / 0.6);
   }
+
+  /* ----------------------------------------------------------------
+     MarketPulse — looped capital-flow animation.
+     Pure CSS, GPU-friendly (transform/opacity only), no JS rAF.
+     Theme-aware via currentColor / semantic tokens.
+     Disabled automatically by the prefers-reduced-motion block above.
+  ---------------------------------------------------------------- */
+  @keyframes mp-bar-rise {
+    0%   { transform: scaleY(0.15); }
+    50%  { transform: scaleY(1); }
+    100% { transform: scaleY(0.15); }
+  }
+  @keyframes mp-line-draw {
+    0%   { stroke-dashoffset: 600; opacity: 0.2; }
+    50%  { stroke-dashoffset: 0;   opacity: 1; }
+    100% { stroke-dashoffset: -600; opacity: 0.2; }
+  }
+  @keyframes mp-coin-flow {
+    0%   { transform: translate(0, 0)   scale(0.6); opacity: 0; }
+    10%  { opacity: 0.9; }
+    90%  { opacity: 0.9; }
+    100% { transform: translate(220px, -90px) scale(1); opacity: 0; }
+  }
+  @keyframes mp-pulse-ring {
+    0%   { transform: scale(0.6); opacity: 0.7; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+
+  .mp-bar     { transform-origin: bottom; animation: mp-bar-rise 4s ease-in-out infinite; }
+  .mp-line    { stroke-dasharray: 600; animation: mp-line-draw 8s ease-in-out infinite; }
+  .mp-coin    { animation: mp-coin-flow 5s linear infinite; }
+  .mp-ring    { transform-origin: center; animation: mp-pulse-ring 3.5s ease-out infinite; }
 }
