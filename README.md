@@ -205,6 +205,11 @@ custom server tier to scale. Optimisations are split between the platform
   - `wallet_transactions(user_id, created_at DESC)`, `wallet_transactions(wallet_id, created_at DESC)`
 - **Top-level `ErrorBoundary`** (`src/components/ErrorBoundary.tsx`) catches render-time crashes, forwards them to `error_logs`, and shows a recoverable fallback instead of a white screen.
 - **Lazy media** — pitch decks and KYC documents are served via signed Storage URLs only when an authorized user opens them.
+- **Production performance monitoring** (`src/lib/perfMonitoring.ts` + `src/lib/errorLog.ts`):
+  - **Route load times** measured per pathname via a router-aware hook; routes slower than `2500ms` are reported.
+  - **React Query slow queries** captured by a global `QueryCache` observer; queries slower than `1500ms` are reported with their query key.
+  - **RPC latency** wrapped via `timedRpc(name, exec)`; calls slower than `1500ms` are reported with the RPC name.
+  - All three feed into `error_logs` under category `perf` (purple in the admin panel) with a 60-second per-event dedupe window so a single slow endpoint cannot flood the table.
 
 ### Architectural assumptions
 
