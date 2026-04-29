@@ -5,6 +5,11 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * Default = DARK theme (preserves existing brand). The `.light` class on
+   * <html> swaps in the light palette. next-themes toggles the class so all
+   * semantic tokens flip atomically without re-flow.
+   */
   :root {
     --background: 240 15% 5%;
     --foreground: 40 20% 92%;
@@ -59,11 +64,82 @@
     --shadow-gold: 0 0 40px -10px hsl(40 55% 55% / 0.25);
     --shadow-card: 0 4px 24px -4px hsl(0 0% 0% / 0.4);
   }
+
+  .light {
+    /* Warm cream + ink palette — keeps the gold brand readable on white. */
+    --background: 40 33% 97%;
+    --foreground: 240 15% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 15% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 15% 12%;
+
+    --primary: 35 65% 42%;
+    --primary-foreground: 40 33% 98%;
+
+    --secondary: 40 20% 93%;
+    --secondary-foreground: 240 15% 18%;
+
+    --muted: 40 20% 94%;
+    --muted-foreground: 240 8% 38%;
+
+    --accent: 25 75% 45%;
+    --accent-foreground: 40 33% 98%;
+
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 40 33% 98%;
+
+    --border: 40 15% 86%;
+    --input: 40 15% 88%;
+    --ring: 35 65% 42%;
+
+    --sidebar-background: 40 25% 96%;
+    --sidebar-foreground: 240 15% 18%;
+    --sidebar-primary: 35 65% 42%;
+    --sidebar-primary-foreground: 40 33% 98%;
+    --sidebar-accent: 40 20% 92%;
+    --sidebar-accent-foreground: 240 15% 18%;
+    --sidebar-border: 40 15% 86%;
+    --sidebar-ring: 35 65% 42%;
+
+    --gold: 35 65% 42%;
+    --gold-light: 40 60% 55%;
+    --gold-dark: 30 70% 32%;
+    --copper: 25 75% 40%;
+    --surface: 0 0% 100%;
+    --surface-hover: 40 20% 95%;
+
+    --gradient-gold: linear-gradient(135deg, hsl(35 65% 42%), hsl(25 75% 45%));
+    --gradient-dark: linear-gradient(180deg, hsl(40 33% 97%), hsl(0 0% 100%));
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(40 25% 96%));
+    --shadow-gold: 0 0 40px -10px hsl(35 65% 42% / 0.25);
+    --shadow-card: 0 4px 24px -4px hsl(240 15% 12% / 0.08);
+  }
 }
 
 @layer base {
   * {
     @apply border-border;
+  }
+
+  /* Smooth, accessible theme transition — only the few properties that
+     actually change between themes. Disabled when the user prefers reduced
+     motion. */
+  html {
+    transition:
+      background-color 220ms ease,
+      color 220ms ease;
+  }
+  body,
+  *:not(svg):not(path) {
+    transition:
+      background-color 220ms ease,
+      border-color 220ms ease,
+      color 220ms ease,
+      fill 220ms ease,
+      stroke 220ms ease;
   }
 
   body {
@@ -72,6 +148,13 @@
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html, body, *:not(svg):not(path) {
+      transition: none !important;
+      animation: none !important;
+    }
   }
 }
 
