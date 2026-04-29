@@ -120,20 +120,6 @@ export function reportPerf(evt: PerfEvent): void {
       /* swallow — monitoring must never break UX */
     }
   })();
-      _category: "perf",
-      _message: `Slow ${evt.kind}: ${evt.label} took ${Math.round(evt.durationMs)}ms`,
-      _source: `perf:${evt.kind}`,
-      _context: {
-        durationMs: Math.round(evt.durationMs),
-        thresholdMs: evt.thresholdMs,
-        label: evt.label,
-        ...(evt.extra ?? {}),
-      } as any,
-    })
-    .then(() => {})
-    .catch(() => {
-      /* swallow — monitoring must never break UX */
-    });
 }
 
 /**
