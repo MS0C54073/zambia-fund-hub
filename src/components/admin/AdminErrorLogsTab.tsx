@@ -106,9 +106,11 @@ export default function AdminErrorLogsTab() {
             <SelectItem value="all">All categories</SelectItem>
             <SelectItem value="rls">RLS denials</SelectItem>
             <SelectItem value="rpc">RPC failures</SelectItem>
+            <SelectItem value="perf">Performance</SelectItem>
             <SelectItem value="payment">Payment</SelectItem>
             <SelectItem value="transaction">Transaction</SelectItem>
             <SelectItem value="auth">Auth</SelectItem>
+            <SelectItem value="render">Render</SelectItem>
             <SelectItem value="other">Other</SelectItem>
           </SelectContent>
         </Select>
