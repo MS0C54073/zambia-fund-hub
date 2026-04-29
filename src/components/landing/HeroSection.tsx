@@ -3,14 +3,21 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, TrendingUp, Shield, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import heroBg from "@/assets/hero-bg.jpg";
+import { MarketPulse } from "@/components/MarketPulse";
 
 const HeroSection = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0">
-        <img src={heroBg} alt="" className="w-full h-full object-cover opacity-30" />
+        <img src={heroBg} alt="" className="w-full h-full object-cover opacity-30 dark:opacity-30" loading="eager" decoding="async" />
         <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background" />
+      </div>
+
+      {/* Decorative looped capital-flow animation — accessible (aria-hidden),
+          GPU-only transforms, theme-aware via semantic tokens. */}
+      <div className="hidden lg:block absolute right-6 top-28 w-[28rem] max-w-[40vw] opacity-70 dark:opacity-60">
+        <MarketPulse />
       </div>
 
       <div className="container relative z-10 px-4 pt-24 pb-16">

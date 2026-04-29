@@ -5,6 +5,11 @@
 @tailwind utilities;
 
 @layer base {
+  /*
+   * Default = DARK theme (preserves existing brand). The `.light` class on
+   * <html> swaps in the light palette. next-themes toggles the class so all
+   * semantic tokens flip atomically without re-flow.
+   */
   :root {
     --background: 240 15% 5%;
     --foreground: 40 20% 92%;
@@ -59,11 +64,82 @@
     --shadow-gold: 0 0 40px -10px hsl(40 55% 55% / 0.25);
     --shadow-card: 0 4px 24px -4px hsl(0 0% 0% / 0.4);
   }
+
+  .light {
+    /* Warm cream + ink palette — keeps the gold brand readable on white. */
+    --background: 40 33% 97%;
+    --foreground: 240 15% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 15% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 15% 12%;
+
+    --primary: 35 65% 42%;
+    --primary-foreground: 40 33% 98%;
+
+    --secondary: 40 20% 93%;
+    --secondary-foreground: 240 15% 18%;
+
+    --muted: 40 20% 94%;
+    --muted-foreground: 240 8% 38%;
+
+    --accent: 25 75% 45%;
+    --accent-foreground: 40 33% 98%;
+
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 40 33% 98%;
+
+    --border: 40 15% 86%;
+    --input: 40 15% 88%;
+    --ring: 35 65% 42%;
+
+    --sidebar-background: 40 25% 96%;
+    --sidebar-foreground: 240 15% 18%;
+    --sidebar-primary: 35 65% 42%;
+    --sidebar-primary-foreground: 40 33% 98%;
+    --sidebar-accent: 40 20% 92%;
+    --sidebar-accent-foreground: 240 15% 18%;
+    --sidebar-border: 40 15% 86%;
+    --sidebar-ring: 35 65% 42%;
+
+    --gold: 35 65% 42%;
+    --gold-light: 40 60% 55%;
+    --gold-dark: 30 70% 32%;
+    --copper: 25 75% 40%;
+    --surface: 0 0% 100%;
+    --surface-hover: 40 20% 95%;
+
+    --gradient-gold: linear-gradient(135deg, hsl(35 65% 42%), hsl(25 75% 45%));
+    --gradient-dark: linear-gradient(180deg, hsl(40 33% 97%), hsl(0 0% 100%));
+    --gradient-card: linear-gradient(135deg, hsl(0 0% 100%), hsl(40 25% 96%));
+    --shadow-gold: 0 0 40px -10px hsl(35 65% 42% / 0.25);
+    --shadow-card: 0 4px 24px -4px hsl(240 15% 12% / 0.08);
+  }
 }
 
 @layer base {
   * {
     @apply border-border;
+  }
+
+  /* Smooth, accessible theme transition — only the few properties that
+     actually change between themes. Disabled when the user prefers reduced
+     motion. */
+  html {
+    transition:
+      background-color 220ms ease,
+      color 220ms ease;
+  }
+  body,
+  *:not(svg):not(path) {
+    transition:
+      background-color 220ms ease,
+      border-color 220ms ease,
+      color 220ms ease,
+      fill 220ms ease,
+      stroke 220ms ease;
   }
 
   body {
@@ -73,35 +149,76 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    html, body, *:not(svg):not(path) {
+      transition: none !important;
+      animation: none !important;
+    }
+  }
 }
 
 @layer utilities {
   .text-gradient-gold {
-    background: linear-gradient(135deg, hsl(40 55% 55%), hsl(25 80% 50%));
+    background: var(--gradient-gold);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .bg-gradient-gold {
-    background: linear-gradient(135deg, hsl(40 55% 55%), hsl(25 80% 50%));
+    background: var(--gradient-gold);
   }
 
   .bg-gradient-card {
-    background: linear-gradient(135deg, hsl(240 12% 10%), hsl(240 12% 8%));
+    background: var(--gradient-card);
   }
 
   .border-gold-subtle {
-    border-color: hsl(40 55% 55% / 0.15);
+    border-color: hsl(var(--gold) / 0.18);
   }
 
   .glow-gold {
-    box-shadow: 0 0 40px -10px hsl(40 55% 55% / 0.3);
+    box-shadow: var(--shadow-gold);
   }
 
+  /* Theme-aware glass surface */
   .glass {
-    background: hsl(240 12% 8% / 0.8);
+    background: hsl(var(--card) / 0.78);
     backdrop-filter: blur(12px);
-    border: 1px solid hsl(240 10% 16% / 0.5);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border) / 0.6);
   }
+
+  /* ----------------------------------------------------------------
+     MarketPulse — looped capital-flow animation.
+     Pure CSS, GPU-friendly (transform/opacity only), no JS rAF.
+     Theme-aware via currentColor / semantic tokens.
+     Disabled automatically by the prefers-reduced-motion block above.
+  ---------------------------------------------------------------- */
+  @keyframes mp-bar-rise {
+    0%   { transform: scaleY(0.15); }
+    50%  { transform: scaleY(1); }
+    100% { transform: scaleY(0.15); }
+  }
+  @keyframes mp-line-draw {
+    0%   { stroke-dashoffset: 600; opacity: 0.2; }
+    50%  { stroke-dashoffset: 0;   opacity: 1; }
+    100% { stroke-dashoffset: -600; opacity: 0.2; }
+  }
+  @keyframes mp-coin-flow {
+    0%   { transform: translate(0, 0)   scale(0.6); opacity: 0; }
+    10%  { opacity: 0.9; }
+    90%  { opacity: 0.9; }
+    100% { transform: translate(220px, -90px) scale(1); opacity: 0; }
+  }
+  @keyframes mp-pulse-ring {
+    0%   { transform: scale(0.6); opacity: 0.7; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+
+  .mp-bar     { transform-origin: bottom; animation: mp-bar-rise 4s ease-in-out infinite; }
+  .mp-line    { stroke-dasharray: 600; animation: mp-line-draw 8s ease-in-out infinite; }
+  .mp-coin    { animation: mp-coin-flow 5s linear infinite; }
+  .mp-ring    { transform-origin: center; animation: mp-pulse-ring 3.5s ease-out infinite; }
 }
