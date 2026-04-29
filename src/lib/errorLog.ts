@@ -103,8 +103,23 @@ export function reportPerf(evt: PerfEvent): void {
   if (!shouldReport(key)) return;
 
   // Fire-and-forget; never await in caller paths.
-  supabase
-    .rpc("log_error", {
+  void (async () => {
+    try {
+      await supabase.rpc("log_error", {
+        _category: "perf",
+        _message: `Slow ${evt.kind}: ${evt.label} took ${Math.round(evt.durationMs)}ms`,
+        _source: `perf:${evt.kind}`,
+        _context: {
+          durationMs: Math.round(evt.durationMs),
+          thresholdMs: evt.thresholdMs,
+          label: evt.label,
+          ...(evt.extra ?? {}),
+        } as any,
+      });
+    } catch {
+      /* swallow — monitoring must never break UX */
+    }
+  })();
       _category: "perf",
       _message: `Slow ${evt.kind}: ${evt.label} took ${Math.round(evt.durationMs)}ms`,
       _source: `perf:${evt.kind}`,
