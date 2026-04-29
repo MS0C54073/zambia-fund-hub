@@ -1,6 +1,14 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type ErrorCategory = "rpc" | "rls" | "payment" | "transaction" | "auth" | "render" | "other";
+export type ErrorCategory =
+  | "rpc"
+  | "rls"
+  | "payment"
+  | "transaction"
+  | "auth"
+  | "render"
+  | "perf"
+  | "other";
 
 interface LogOptions {
   category: ErrorCategory;
