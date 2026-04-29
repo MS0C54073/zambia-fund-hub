@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, ExternalLink, Trash2, ShieldCheck, Clock } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import { logStorageDenial } from "@/lib/errorLog";
 
 interface Props {
   business: Tables<"businesses">;
