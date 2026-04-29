@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { attachQueryPerfObserver, useRouteLoadTimer } from "@/lib/perfMonitoring";
 import Index from "./pages/Index"; // landing stays eager for fast first paint
 
