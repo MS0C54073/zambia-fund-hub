@@ -36,6 +36,8 @@ const CATEGORY_COLORS: Record<string, string> = {
   payment: "text-yellow-400",
   transaction: "text-yellow-400",
   auth: "text-blue-400",
+  perf: "text-purple-400",
+  render: "text-pink-400",
   other: "text-muted-foreground",
 };
 
