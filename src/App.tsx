@@ -40,11 +40,22 @@ const queryClient = new QueryClient({
   },
 });
 
+// Attach the slow-query observer once. Reports any query whose fetch exceeds
+// PERF_THRESHOLDS.queryMs into error_logs (category "perf").
+attachQueryPerfObserver(queryClient);
+
 const RouteFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
     <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
   </div>
 );
+
+// Tiny inner component so we can use the router-aware timing hook
+// inside <BrowserRouter>.
+const RoutePerfTracker = () => {
+  useRouteLoadTimer();
+  return null;
+};
 
 const App = () => (
   <ErrorBoundary>
