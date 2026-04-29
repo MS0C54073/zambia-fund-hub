@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { attachQueryPerfObserver, useRouteLoadTimer } from "@/lib/perfMonitoring";
 import Index from "./pages/Index"; // landing stays eager for fast first paint
 
 // Route-level code splitting: each chunk loads on demand, keeping the
@@ -39,11 +40,22 @@ const queryClient = new QueryClient({
   },
 });
 
+// Attach the slow-query observer once. Reports any query whose fetch exceeds
+// PERF_THRESHOLDS.queryMs into error_logs (category "perf").
+attachQueryPerfObserver(queryClient);
+
 const RouteFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
     <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
   </div>
 );
+
+// Tiny inner component so we can use the router-aware timing hook
+// inside <BrowserRouter>.
+const RoutePerfTracker = () => {
+  useRouteLoadTimer();
+  return null;
+};
 
 const App = () => (
   <ErrorBoundary>
@@ -52,6 +64,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <RoutePerfTracker />
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<Index />} />

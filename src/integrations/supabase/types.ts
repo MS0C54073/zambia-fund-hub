@@ -564,6 +564,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_read_business_doc: {
+        Args: { _object_name: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -580,6 +584,10 @@ export type Database = {
           _message: string
           _source?: string
         }
+        Returns: string
+      }
+      log_storage_denial: {
+        Args: { _bucket: string; _path: string; _reason?: string }
         Returns: string
       }
       wallet_deposit: {

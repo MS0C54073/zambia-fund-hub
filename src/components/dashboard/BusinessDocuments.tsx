@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Upload, FileText, ExternalLink, Trash2, ShieldCheck, Clock } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import { logStorageDenial } from "@/lib/errorLog";
 
 interface Props {
   business: Tables<"businesses">;
@@ -72,9 +73,16 @@ export default function BusinessDocuments({ business, onChange }: Props) {
   };
 
   const view = async (path: string) => {
-    const { data } = await supabase.storage.from("business-documents").createSignedUrl(path, 3600);
-    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
-    else toast({ title: "Could not open document", variant: "destructive" });
+    const { data, error } = await supabase.storage
+      .from("business-documents")
+      .createSignedUrl(path, 3600);
+    if (data?.signedUrl) {
+      window.open(data.signedUrl, "_blank");
+    } else {
+      // Record denial for the admin Error Logs panel
+      logStorageDenial("business-documents", path, error?.message);
+      toast({ title: "Could not open document", variant: "destructive" });
+    }
   };
 
   const remove = async (slot: DocSlot, path: string) => {
