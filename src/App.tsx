@@ -64,6 +64,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <RoutePerfTracker />
           <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<Index />} />
