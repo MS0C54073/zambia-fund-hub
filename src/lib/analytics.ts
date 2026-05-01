@@ -46,12 +46,16 @@ export function track(event: string, opts: TrackOptions = {}): void {
 
   void (async () => {
     try {
-      await supabase.rpc("track_event", {
+      // Cast: types.ts regenerates after this migration; cast keeps build green meanwhile.
+      await (supabase.rpc as unknown as (
+        name: string,
+        args: Record<string, unknown>,
+      ) => Promise<unknown>)("track_event", {
         _event_name: event,
         _surface: opts.surface ?? null,
         _label: opts.label ?? null,
         _session_id: getSessionId(),
-        _properties: (opts.properties ?? {}) as never,
+        _properties: opts.properties ?? {},
       });
     } catch {
       /* swallow — analytics must never break UX */
