@@ -97,20 +97,81 @@ const STAGES: Stage[] = [
 ];
 
 const CYCLE_MS = 4200;
+const SURFACE = "journey_showcase";
 
 const JourneyShowcase = () => {
   const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const impressionFiredRef = useRef(false);
+  const stageEnteredAtRef = useRef<number>(performance.now());
 
+  // Fire a one-shot "viewed" event the first time the section enters the viewport.
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || impressionFiredRef.current) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting && !impressionFiredRef.current) {
+            impressionFiredRef.current = true;
+            track("journey_showcase_viewed", { surface: SURFACE });
+            io.disconnect();
+            break;
+          }
+        }
+      },
+      { threshold: 0.4 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  // Auto-advance loop. Pauses on hover/focus so the chip click metric stays clean.
   useEffect(() => {
     const reduce =
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (reduce) return;
+    if (reduce || paused) return;
     const id = window.setInterval(() => {
-      setIndex((i) => (i + 1) % STAGES.length);
+      setIndex((i) => {
+        const next = (i + 1) % STAGES.length;
+        track("journey_stage_advance", {
+          surface: SURFACE,
+          label: STAGES[next].key,
+          properties: {
+            from: STAGES[i].key,
+            to: STAGES[next].key,
+            trigger: "auto",
+            dwell_ms: Math.round(performance.now() - stageEnteredAtRef.current),
+          },
+        });
+        stageEnteredAtRef.current = performance.now();
+        return next;
+      });
     }, CYCLE_MS);
     return () => window.clearInterval(id);
-  }, []);
+  }, [paused]);
+
+  const goToStage = (nextIdx: number, trigger: "click" | "keyboard") => {
+    if (nextIdx === index) return;
+    const from = STAGES[index].key;
+    const to = STAGES[nextIdx].key;
+    track("journey_stage_click", {
+      surface: SURFACE,
+      label: to,
+      properties: {
+        from,
+        to,
+        trigger,
+        from_index: index,
+        to_index: nextIdx,
+        dwell_ms: Math.round(performance.now() - stageEnteredAtRef.current),
+      },
+    });
+    stageEnteredAtRef.current = performance.now();
+    setIndex(nextIdx);
+  };
 
   const stage = STAGES[index];
 
