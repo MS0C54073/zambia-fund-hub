@@ -210,6 +210,10 @@ custom server tier to scale. Optimisations are split between the platform
   - **React Query slow queries** captured by a global `QueryCache` observer; queries slower than `1500ms` are reported with their query key.
   - **RPC latency** wrapped via `timedRpc(name, exec)`; calls slower than `1500ms` are reported with the RPC name.
   - All three feed into `error_logs` under category `perf` (purple in the admin panel) with a 60-second per-event dedupe window so a single slow endpoint cannot flood the table.
+- **Product analytics** (`src/lib/analytics.ts` + `analytics_events` table):
+  - Fire-and-forget `track(event, { surface, label, properties })` helper writes through the `track_event` RPC. Anonymous visitors can record events; only admins can read them (RLS).
+  - A per-event 400ms client-side dedupe prevents double-fires; a per-tab session id (sessionStorage) lets us stitch funnels without identifying users.
+  - **Landing-page instrumentation** on the "A Day at ZamFund" carousel: `journey_showcase_viewed` (one-shot on intersection), `journey_stage_click` (manual chip), `journey_stage_advance` (auto-loop), `journey_carousel_pause` / `journey_carousel_resume` (hover). Each event records `from`, `to`, `trigger`, and `dwell_ms` so we can measure which stages convert best.
 
 ### Architectural assumptions
 
