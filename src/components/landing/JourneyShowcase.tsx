@@ -177,8 +177,22 @@ const JourneyShowcase = () => {
 
   return (
     <section
+      ref={sectionRef}
       aria-label="A day at ZamFund — the investment journey"
       className="relative py-20 md:py-28 bg-background overflow-hidden"
+      onMouseEnter={() => {
+        setPaused(true);
+        track("journey_carousel_pause", { surface: SURFACE, properties: { reason: "hover" } });
+      }}
+      onMouseLeave={() => {
+        setPaused(false);
+        track("journey_carousel_resume", { surface: SURFACE, properties: { reason: "hover_end" } });
+      }}
+      onFocus={() => setPaused(true)}
+      onBlur={(e) => {
+        // only resume if focus has actually left the section
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setPaused(false);
+      }}
     >
       <div className="container px-4">
         {/* Heading */}
@@ -210,7 +224,7 @@ const JourneyShowcase = () => {
                 role="tab"
                 aria-selected={active}
                 aria-label={`${s.emoji} ${s.title}`}
-                onClick={() => setIndex(i)}
+                onClick={() => goToStage(i, "click")}
                 className={[
                   "px-3 py-1.5 rounded-full text-xs md:text-sm font-medium border transition-all",
                   active
