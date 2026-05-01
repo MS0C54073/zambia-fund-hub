@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      analytics_events: {
+        Row: {
+          created_at: string
+          event_name: string
+          id: string
+          label: string | null
+          properties: Json
+          session_id: string | null
+          surface: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_name: string
+          id?: string
+          label?: string | null
+          properties?: Json
+          session_id?: string | null
+          surface?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_name?: string
+          id?: string
+          label?: string | null
+          properties?: Json
+          session_id?: string | null
+          surface?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       businesses: {
         Row: {
           created_at: string
@@ -589,6 +622,16 @@ export type Database = {
       log_storage_denial: {
         Args: { _bucket: string; _path: string; _reason?: string }
         Returns: string
+      }
+      track_event: {
+        Args: {
+          _event_name: string
+          _label?: string
+          _properties?: Json
+          _session_id?: string
+          _surface?: string
+        }
+        Returns: undefined
       }
       wallet_deposit: {
         Args: {
